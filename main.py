@@ -5,7 +5,7 @@ from methods.simple import filter_signal_simple
 from methods.sgd import filter_signal_sgd
 
 from data_loader import load_real_data, generate_synthetic_data
-from visualizer import visualize_signals
+from analyzer import plot_signals, compute_mse, plot_mses
 
 # Seed for reproducibility of randomness
 DEFAULT_SEED = 42
@@ -18,10 +18,14 @@ NOISE_SIGNAL_PATH = DATA_PATH + "talkingNoise.mp3"
 methods = {
     "simple": filter_signal_simple,
     "sgd": filter_signal_sgd,
+    "all": None,
 }
 
-# Noisy signal, as well as noise (before it goes through the filter)
+# Baseline signal
+true_signal = None
+# Baseline Signal + Noise that went through filter (e.g. echo)
 noisy_signal = None
+# Noise before it went through filter
 noise = None
 # Filtering method used
 filter_signal = None
@@ -39,16 +43,19 @@ if data_arg not in ["real", "synthetic"]:
     sys.exit(1)
 else:
     # Load / create data
-    res = (
-        load_real_data(NOISY_SIGNAL_PATH, NOISE_SIGNAL_PATH)
-        if data_arg == "real"
-        else generate_synthetic_data(DEFAULT_SEED)
-    )
-    # Check for error
-    if res is None:
-        sys.exit(1)
+    if data_arg == "real":
+        res = load_real_data(NOISY_SIGNAL_PATH, NOISE_SIGNAL_PATH)
+        # Check for error
+        if res is None:
+            sys.exit(1)
+        else:
+            noisy_signal, noise = res
     else:
-        noisy_signal, noise = res
+        res = generate_synthetic_data(DEFAULT_SEED)
+        if res is None:
+            sys.exit(1)
+        else:
+            true_signal, noisy_signal, noise = res
 
 
 if method_arg not in methods.keys():
@@ -58,13 +65,52 @@ else:
     # Select adaptive filtering method
     filter_signal = methods[method_arg]
 
+print(f"Running '{method_arg}' method on '{data_arg}' data...")
+
 # Perform adaptive filtering
 # TODO: Measure running time
-filtered_signal = filter_signal(noisy_signal, noise)
-if filtered_signal is None:
-    sys.exit(1)
+if not filter_signal is None:
+    # TEST ONE METHOD
 
-# Visualize results
-visualize_signals([noisy_signal, filtered_signal], ["Noisy Signal", "Filtered Signal"])
+    filtered_signal = filter_signal(noisy_signal, noise)
+    if filtered_signal is None:
+        sys.exit(1)
 
-# TODO: Compute and measure stuff like error, etc...
+    # Visualize results
+    signals_to_plot = [
+        ("Noisy signal", noisy_signal),
+        ("Filtered signal", filtered_signal),
+    ]
+
+    if true_signal is not None:
+        # Plot true signal, if available
+        signals_to_plot.insert(0, ("True signal", true_signal))
+        # Compute MSE
+        mse = compute_mse(true_signal, filtered_signal)
+        print(f"MSE: {mse}")
+        # TODO: Compute and measure more stuff...
+
+    plot_signals(signals_to_plot)
+else:
+    # TEST AND COMPARE ALL METHODS
+    filtered_signals = []
+
+    for method_name, fs in methods.items():
+        if fs is None:
+            continue
+        # Filter with each method
+        filtered_signal = fs(noisy_signal, noise)
+        if filtered_signal is None:
+            sys.exit(1)
+        filtered_signals.append((method_name, filtered_signal))
+
+    signals_to_plot = filtered_signals.copy()
+    signals_to_plot.insert(0, ("Noisy signal", noisy_signal))
+
+    if true_signal is not None:
+        # Plot true signal, if available
+        signals_to_plot.insert(0, ("True signal", true_signal))
+        # Plot MSE's for different methods
+        plot_mses(true_signal, filtered_signals)
+
+    plot_signals(signals_to_plot)
