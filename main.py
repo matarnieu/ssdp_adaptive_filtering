@@ -7,12 +7,14 @@ from methods.sgd import filter_signal_sgd
 from data_loader import load_real_data, generate_synthetic_data
 from analyzer import plot_signals, compute_mse, plot_mses
 
+import os
+
 # Seed for reproducibility of randomness
 DEFAULT_SEED = 42
 # Paths to real data
-DATA_PATH = "data/"
-NOISY_SIGNAL_PATH = DATA_PATH + "bassLineTalkingNoise.mp3"
-NOISE_SIGNAL_PATH = DATA_PATH + "talkingNoise.mp3"
+DATA_PATH = "data"
+NOISY_SIGNAL_PATH = os.path.join(DATA_PATH, "bassLineTalkingNoise.mp3")
+NOISE_SIGNAL_PATH = os.path.join(DATA_PATH,  "talkingNoise.mp3")
 
 # All adaptive filtering algorithms used, as well as the cmd line arguments used to select them
 methods = {
