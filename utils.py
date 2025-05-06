@@ -83,17 +83,16 @@ def plot(noisy_signal, signal, h, type_noise, type_signal, type_filter, snr):
     axes[0].set_title(title)
     axes[0].set_xlabel('num_samples')
     
-    if snr != None:
-        if type_signal == 'sinus':
-            sns.lineplot(noisy_signal, ax=axes[1])    
-        else:    
-            sns.lineplot(noisy_signal, ax=axes[1], drawstyle='steps-post')
-        axes[1].set_xlim(0, 100)
-        axes[1].set_title(f'noisy signal, {type_noise} noise, SNR = {snr}dB')
-        axes[1].set_xlabel('num_samples')
+    if type_signal == 'sinus':
+        sns.lineplot(noisy_signal, ax=axes[1])    
+    else:    
+        sns.lineplot(noisy_signal, ax=axes[1], drawstyle='steps-post')
+    axes[1].set_xlim(0, 100)
+    axes[1].set_title(f'noisy signal, {type_noise} noise, SNR = {snr}dB')
+    axes[1].set_xlabel('num_samples')
 
-        sns.pointplot(h, ax=axes[2])
-        axes[2].set_title(f"{type_filter} filter")
-        axes[2].set_xlabel('num_samples')
+    sns.pointplot(h, ax=axes[2])
+    axes[2].set_title(f"{type_filter} filter")
+    axes[2].set_xlabel('num_samples')
 
     plt.show()
