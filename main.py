@@ -1,4 +1,6 @@
 import sys
+import random
+import numpy as np
 
 # Import adaptive filtering algorithms
 from methods.simple import filter_signal_simple
@@ -11,10 +13,12 @@ import os
 
 # Seed for reproducibility of randomness
 DEFAULT_SEED = 42
+np.random.seed(DEFAULT_SEED)
+random.seed(DEFAULT_SEED)
 # Paths to real data
 DATA_PATH = "data"
 NOISY_SIGNAL_PATH = os.path.join(DATA_PATH, "bassLineTalkingNoise.mp3")
-NOISE_SIGNAL_PATH = os.path.join(DATA_PATH,  "talkingNoise.mp3")
+NOISE_SIGNAL_PATH = os.path.join(DATA_PATH, "talkingNoise.mp3")
 
 # All adaptive filtering algorithms used, as well as the cmd line arguments used to select them
 methods = {
@@ -53,7 +57,7 @@ else:
         else:
             noisy_signal, noise = res
     else:
-        res = generate_synthetic_data(DEFAULT_SEED)
+        res = generate_synthetic_data()
         if res is None:
             sys.exit(1)
         else:

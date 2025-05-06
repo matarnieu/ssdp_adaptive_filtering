@@ -1,4 +1,4 @@
-"""Use adaptive filtering to noisy signal extract filtered signal from
+"""Use adaptive filtering to extract filtered signal from
 noisy_signal and noise (numpy arrays). Returns filtered_signal (numpy_array).
 In case of error, prints error message and returns None."""
 
