@@ -1,7 +1,7 @@
-"""Use adaptive filtering to extract filtered signal from
-noisy_signal and noise (numpy arrays). Returns filtered_signal (numpy_array).
-In case of error, prints error message and returns None."""
+"""Use stochastic gradient descent to extract filtered signal from
+noisy_signal and noise (numpy arrays). Approximate K-tap filter. Return filtered_signal.
+In case of error, print error message and return None."""
 
 
-def filter_signal_sgd(noisy_signal, noise):
+def filter_signal_sgd(noisy_signal, noise, K, args):
     raise NotImplementedError
