@@ -46,7 +46,7 @@ def generate_synthetic_data(num_samples, low, high, size_filter, snr=None, type_
     padded_noise = np.pad(noise, (size_filter - 1, 0), mode='constant')
     for idx, h in enumerate(H):
         #Doing the convolution manually as we dont need the whole convolution
-        segment = padded_noise[idx:idx + size_filter][::-1]
+        segment = padded_noise[idx:idx + size_filter][::-1] #keep the filter causal
         noise_filtered[idx] = np.dot(h, segment)
     noisy_signal = signal + noise_filtered
     return noisy_signal, signal, noise, H
