@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.signal import welch
 
-def plot_signals(signals, window=None):
+def plot_signals(signals, title, window=None):
     """
     Visualize list of signals with given labels.
     signals: list of (label, np.array)
@@ -20,7 +20,7 @@ def plot_signals(signals, window=None):
         plt.plot(x, sig, label=label)
     plt.xlabel('Sample index')
     plt.ylabel('Amplitude')
-    plt.title('Signals')
+    plt.title(f'{title}')
     plt.legend()
     plt.tight_layout()
     plt.show()
@@ -34,7 +34,7 @@ def compute_mse(true_signal, filtered_signal):
     mse = np.mean((true_signal - filtered_signal) ** 2)
     return mse
 
-def plot_mses(true_signal, filtered_signals):
+def plot_mses(true_signal, filtered_signals, title):
     """
     Plot MSE for multiple filtered signals.
     filtered_signals: list of (label, np.array)
@@ -49,12 +49,12 @@ def plot_mses(true_signal, filtered_signals):
     plt.bar(labels, mses)
     plt.xlabel('Method')
     plt.ylabel('MSE')
-    plt.title('MSE Comparison')
+    plt.title(f'{title}')
     plt.tight_layout()
     plt.show()
 
 
-def plot_error_convergence(error_histories, labels=None):
+def plot_error_convergence(error_histories, title, labels=None):
     """
     Plot error convergence curves.
     error_histories: list of 1D arrays of error metric per sample/iteration
@@ -66,13 +66,13 @@ def plot_error_convergence(error_histories, labels=None):
         plt.plot(np.arange(len(hist)), hist, label=label)
     plt.xlabel('Iteration')
     plt.ylabel('Error')
-    plt.title('Error Convergence')
+    plt.title(f'{title}')
     plt.legend()
     plt.tight_layout()
     plt.show()
 
 
-def plot_psd(signals, fs, labels=None, nperseg=None):
+def plot_psd(signals, fs, title, labels=None, nperseg=None):
     """
     Plot Power Spectral Density of signals.
     signals: list of np.array
@@ -86,13 +86,13 @@ def plot_psd(signals, fs, labels=None, nperseg=None):
         plt.semilogy(f, Pxx, label=label)
     plt.xlabel('Frequency [Hz]')
     plt.ylabel('PSD')
-    plt.title('Power Spectral Density')
+    plt.title(f'{title}')
     plt.legend()
     plt.tight_layout()
     plt.show()
 
 
-def plot_error_histogram(error, bins=50):
+def plot_error_histogram(error, title, bins=50):
     """
     Plot histogram of error signal.
     """
@@ -100,12 +100,12 @@ def plot_error_histogram(error, bins=50):
     plt.hist(error, bins=bins, edgecolor='k')
     plt.xlabel('Error')
     plt.ylabel('Frequency')
-    plt.title('Error Histogram')
+    plt.title(f'{title}')
     plt.tight_layout()
     plt.show()
 
 
-def plot_residual_autocorr(error, max_lag=100):
+def plot_residual_autocorr(error, title, max_lag=100):
     """
     Plot autocorrelation of residual error.
     """
@@ -119,12 +119,12 @@ def plot_residual_autocorr(error, max_lag=100):
     plt.stem(lags[:max_lag], acf[:max_lag], use_line_collection=True)
     plt.xlabel('Lag')
     plt.ylabel('Autocorrelation')
-    plt.title('Residual Autocorrelation')
+    plt.title(f'{title}')
     plt.tight_layout()
     plt.show()
 
 
-def plot_snr_sweep(results_df):
+def plot_snr_sweep(results_df, title):
     """
     Plot performance vs SNR sweep.
     results_df: pandas.DataFrame with columns ['snr', 'method', 'mse']
@@ -137,7 +137,7 @@ def plot_snr_sweep(results_df):
         plt.plot(pivot.index, pivot[method], marker='o', label=method)
     plt.xlabel('Input SNR (dB)')
     plt.ylabel('MSE')
-    plt.title('MSE vs Input SNR')
+    plt.title(f'{title}')
     plt.legend()
     plt.tight_layout()
     plt.show()
