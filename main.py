@@ -13,6 +13,10 @@ from analyzer import plot_signals, compute_mse, plot_mses, plot_psd, plot_snr_sw
 
 import os
 
+# Number of samples in synthetic signal
+NUM_SAMPLES = 10000
+# Define synthetic sinus signal
+LOW, HIGH = 0, 1000 * np.pi
 # Seed for reproducibility of randomness
 DEFAULT_SEED = 42
 np.random.seed(DEFAULT_SEED)
@@ -113,7 +117,14 @@ if args.data == "real":
             print("Warning: Baseline signal extraction not implemented.")
             true_signal = None
 else:
-    res = generate_synthetic_data(args.filter_type, args.snr, args.filter_size)
+    res = generate_synthetic_data(
+        NUM_SAMPLES,
+        LOW,
+        HIGH,
+        args.filter_size,
+        args.filter_type,
+        args.snr,
+    )
     if res is None:
         sys.exit(1)
     else:
