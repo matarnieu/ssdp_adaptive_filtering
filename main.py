@@ -14,7 +14,7 @@ from analyzer import plot_signals, compute_mse, plot_mses, plot_psd, plot_snr_sw
 import os
 
 # Number of samples in synthetic signal
-NUM_SAMPLES = 10000
+NUM_SAMPLES = 500
 # Define synthetic sinus signal
 LOW, HIGH = 0, 1000 * np.pi
 # Seed for reproducibility of randomness
@@ -128,12 +128,14 @@ else:
     if res is None:
         sys.exit(1)
     else:
-        true_signal, noisy_signal, noise, K_true = res
+        noisy_signal, true_signal, noise, _ = res
+        K_true = args.filter_size
         # Either try different filter sizes or use the true one
         if args.K == "best":
             Ks_to_try = [K_true]
         else:
             Ks_to_try = list(range(1, K_true + 5))
+
 
 # --- RUN SELECTED FILTERING METHOD ---
 
@@ -168,7 +170,7 @@ if filter_signal is not None:
             # Plot true signal, if available
             signals_to_plot.insert(0, ("True signal", true_signal))
             # Compute MSE
-            mse = compute_mse(true_signal, filtered_signal, f"{args.method} (K={K})")
+            mse = compute_mse(true_signal, filtered_signal)
             print(f"MSE: {mse}")
             # TODO: Compute and measure more stuff...
 
