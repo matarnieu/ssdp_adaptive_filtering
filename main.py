@@ -14,11 +14,11 @@ from analyzer import plot_signals, compute_mse, plot_mses, plot_psd, plot_snr_sw
 import os
 
 # Number of samples in synthetic signal
-NUM_SAMPLES = 500
+NUM_SAMPLES = 10000
 # Define synthetic sinus signal
 LOW, HIGH = 0, 1000 * np.pi
 # Seed for reproducibility of randomness
-DEFAULT_SEED = 42
+DEFAULT_SEED = 41
 np.random.seed(DEFAULT_SEED)
 random.seed(DEFAULT_SEED)
 # Paths to real data
@@ -168,8 +168,10 @@ if filter_signal is not None:
 
         if true_signal is not None:
             # Plot true signal, if available
-            signals_to_plot.insert(0, ("True signal", true_signal))
+            signals_to_plot.append(("True signal", true_signal))
             # Compute MSE
+            mse_before_filtering = compute_mse(true_signal, noisy_signal)
+            print(f"MSE before filtering: {mse_before_filtering}")
             mse = compute_mse(true_signal, filtered_signal)
             print(f"MSE: {mse}")
             # TODO: Compute and measure more stuff...
@@ -194,7 +196,7 @@ else:
 
     if true_signal is not None:
         # Plot true signal, if available
-        signals_to_plot.insert(0, ("True signal", true_signal))
+        signals_to_plot.append(("True signal", true_signal))
         # Plot MSE's for different methods
         plot_mses(true_signal, filtered_signals)
 
