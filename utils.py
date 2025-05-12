@@ -4,6 +4,13 @@ import seaborn as sns
 
 sns.set_style('darkgrid')
 
+def piecewise_std(t, std):
+    t = np.arange(t)
+    cste = np.ones_like(t) * 1.0
+    cste[t > 0.3 * t.max()] = 2.0
+    cste[t > 0.6 * t.max()] = 0.5
+    return cste * std
+
 def compute_power_signal(signal):
     """
         Compute the average mean power of a signal
@@ -27,9 +34,9 @@ def filter_exponential_decay(size_filter, timestep):
     """
     t = np.arange(size_filter)
     H = np.zeros((timestep, t.shape[0]))
-    cste = timestep//5
+    alpha = timestep//5
     for time in range(1, timestep+1):
-        decay = np.exp(-cste*t/time)
+        decay = np.exp(-alpha*t/time)
         H[time-1] = decay/np.sum(decay) #keep the energy
     return H
 
@@ -43,7 +50,6 @@ def filter_moving_average(size_filter, timestep):
     return H
 
 def generate_time_varying_filter(type, size_filter, timestep):
-    t = np.arange(size_filter)
     if type=='moving_average':
         return filter_moving_average(size_filter, timestep)
     elif type == 'exponential_decay':
@@ -52,54 +58,20 @@ def generate_time_varying_filter(type, size_filter, timestep):
         raise ValueError
     
 
+def generate_time_varying_wgn_with_non_smooth_std(mean, std, size, timestep):
+    return np.random.normal(loc=mean, scale=piecewise_std(timestep, std), size=size)
+
 def generate_wgn(mean, std, size):
     return np.random.normal(loc=mean, scale=std, size=size)
 
-def generate_noise(power_noise, size):
-    return generate_wgn(mean=0, std = np.sqrt(power_noise), size=size)
+def generate_noise(power_noise, size, timestep=None):
+    if timestep == None:
+        return generate_wgn(mean=0, std = np.sqrt(power_noise), size=size)
+    else:
+        return generate_time_varying_wgn_with_non_smooth_std(mean=0, std = np.sqrt(power_noise), size=size, timestep=timestep)
     
     
-def plot(noisy_signal, signal, h, type_signal, type_filter, snr):
-    if snr == None:
-        if type_signal == 'sinus':
-            sns.lineplot(signal)    
-        else:    
-            sns.lineplot(signal, drawstyle='steps-post')
-        plt.xlim(0, 100)
-        title = f'original signal: {type_signal}'
-        if type_signal == 'binary':
-            title += " (set xlim = (0, 10) for visibility)"
-        plt.title(title)
-        plt.xlabel('num_samples')
-        plt.show()
-        return 
-    
-    _, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
-    
-    if type_signal == 'sinus':
-        sns.lineplot(signal, ax=axes[0])    
-    else:    
-        sns.lineplot(signal, ax=axes[0], drawstyle='steps-post')
-    axes[0].set_xlim(0, 100)
-    title = f'original signal: ({type_signal})'
-    axes[0].set_title(title)
-    axes[0].set_xlabel('num_samples')
-    
-    if type_signal == 'sinus':
-        sns.lineplot(noisy_signal, ax=axes[1])    
-    else:    
-        sns.lineplot(noisy_signal, ax=axes[1], drawstyle='steps-post')
-    axes[1].set_xlim(0, 100)
-    axes[1].set_title(f'noisy signal, Gaussian noise, SNR = {snr}dB')
-    axes[1].set_xlabel('num_samples')
-
-    sns.pointplot(h, ax=axes[2])
-    axes[2].set_title(f"{type_filter} filter")
-    axes[2].set_xlabel('num_samples')
-
-    plt.show()
-    
-def plot_2(noisy_signal, signal, h, type_signal, type_filter, snr, window_start=0, window_size=500):
+def plot(noisy_signal, signal, h, type_signal, type_filter, snr, window_start=0, window_size=500):
     num_sample = signal.shape[0]
     if window_start > num_sample:
         window_start = 0
@@ -116,7 +88,7 @@ def plot_2(noisy_signal, signal, h, type_signal, type_filter, snr, window_start=
     _, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=False)
 
     # Plot clean signal
-    axes[0].plot(x, signal[window_start:end], label="Clean")
+    axes[0].plot(x, signal[window_start:end])
     axes[0].set_title(f"{type_signal} signal (window {window_start}-{end})")
     axes[0].set_xlabel("Sample index")
     axes[0].legend()
