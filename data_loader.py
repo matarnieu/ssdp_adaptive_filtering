@@ -21,8 +21,9 @@ Prints error message and returns None when it fails"""
 
 def generate_signal(num_samples, low, high, type_signal):
     t = np.linspace(low, high, num_samples)
+    frequency = 0.001
     if type_signal == "sinus":
-        signal = np.sin(t)
+        signal = np.sin(2 * np.pi * frequency * t)
     elif type_signal == "binary":
         signal = np.zeros(shape=num_samples)
         signal[::2] = 1
