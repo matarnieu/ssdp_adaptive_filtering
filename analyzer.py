@@ -4,7 +4,7 @@ import seaborn as sns
 from scipy.signal import welch
 
 
-def plot_signals(signals, title, window=None):
+def plot_signals(signals, window=None):
     """
     Visualize list of signals with given labels.
     signals: list of (label, np.array)
@@ -21,7 +21,6 @@ def plot_signals(signals, title, window=None):
         plt.plot(x, sig, label=label)
     plt.xlabel("Sample index")
     plt.ylabel("Amplitude")
-    # plt.title(f'{title}')
     plt.legend()
     plt.tight_layout()
     plt.show()

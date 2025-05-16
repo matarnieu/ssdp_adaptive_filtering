@@ -74,7 +74,7 @@ def _filter_gwf_hard_cut(noisy_signal, noise, K, use_sliding_window, args):
     return filtered_signal
 
 
-def filter_gwf_ema(noisy_signal, noise, K, args):
+def filter_signal_gwf_ema(noisy_signal, noise, K, args):
     N = len(noisy_signal)
     filtered_signal = np.zeros(N)
     filtered_signal[:K] = noisy_signal[:K]  # Initialize first K samples

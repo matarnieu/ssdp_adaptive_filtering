@@ -4,7 +4,11 @@ import argparse
 import numpy as np
 
 # Import adaptive filtering algorithms
-from methods.generalized_wiener_filter import filter_gwf
+from methods.generalized_wiener_filter import (
+    filter_signal_gwf_fc,
+    filter_signal_gwf_swc,
+    filter_signal_gwf_ema,
+)
 from methods.sgd import filter_signal_sgd
 from methods.baseline import get_baseline_signal
 
@@ -15,6 +19,7 @@ import os
 
 # Number of samples in synthetic signal
 NUM_SAMPLES = 10000
+SWITCHING_INTERVAL = 1400
 # Define synthetic sinus signal
 LOW, HIGH = 0, 1000 * np.pi
 # Seed for reproducibility of randomness
@@ -27,9 +32,13 @@ DATA_PATH = "data"
 NOISY_SIGNAL_PATH = os.path.join(DATA_PATH, "bassLineTalkingNoise.mp3")
 NOISE_SIGNAL_PATH = os.path.join(DATA_PATH, "talkingNoise.mp3")
 
+# TITLE = "GWF - Sample Correlation"
+
 # All adaptive filtering algorithms used, as well as the cmd line arguments used to select them
 methods = {
-    "gwf": filter_gwf,
+    "gwf_fc": filter_signal_gwf_fc,
+    "gwf_swc": filter_signal_gwf_swc,
+    "gwf_ema": filter_signal_gwf_ema,
     "sgd": filter_signal_sgd,
     "all": None,
 }
@@ -44,7 +53,7 @@ noisy_signal = None
 # Noise before it went through filter
 noise = None
 # Filtering method used
-filter_signal = None
+filter_function = None
 
 # --- ARGUMENT PARSING ---
 parser = argparse.ArgumentParser(
@@ -57,27 +66,51 @@ parser.add_argument(
 )
 parser.add_argument(
     "method",
-    choices=["gwf", "sgd", "all"],
-    help="Filtering method to apply: 'gwf', 'sgd', or 'all'",
+    choices=list(methods.keys()),
+    help="Filtering method to apply.",
 )
 parser.add_argument(
-    "--K",
-    choices=["best", "sweep"],
-    default="best",
+    "--K_sweep",
+    dest="K_sweep",
+    action="store_true",
+    default=False,
     help="Which K strategy should be used: 'best' (default) or 'sweep'",
 )
 
 # Optional arguments (only needed for synthetic data)
 parser.add_argument(
-    "--snr",
+    "--noise_power",
     type=float,
-    help="SNR (Signal-to-Noise Ratio), required for synthetic data",
+    help="Power of X, required for synthetic data",
+)
+
+parser.add_argument(
+    "--noise_power_change",
+    dest="noise_power_change",
+    action="store_true",
+    default=False,
+    help="Add this flag to make noise power change over time (piecewise std).",
+)
+
+parser.add_argument(
+    "--noise_distribution_change",
+    dest="noise_distribution_change",
+    action="store_true",
+    default=False,
+    help="Add this flag to make noise distribution change over time (e.g., alternating between Gaussian and chaotic).",
 )
 
 parser.add_argument(
     "--filter_type",
-    choices=["moving_average", "exponential_decay"],
+    choices=["moving_average", "exponential_decay", "mixed"],
     help="Filter type used to generate synthetic data",
+)
+
+parser.add_argument(
+    "--filter_changing_speed",
+    type=float,
+    default=0.0,
+    help="How quickly the parameters (smoothly) change when generating the filter for the synthetic data",
 )
 
 parser.add_argument(
@@ -86,13 +119,28 @@ parser.add_argument(
     help="Size of impulse response of filter used to generate synthetic data",
 )
 
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
+print(args.noise_distribution_change)
+# Convert unknown args into a dictionary
+extra_args = {}
+for arg in unknown:
+    if arg.startswith("--"):
+        key_val = arg.lstrip("--").split("=", 1)
+        if len(key_val) == 2:
+            key, val = key_val
+            try:
+                extra_args[key] = float(val)
+            except ValueError:
+                extra_args[key] = val  # fallback to string
+        else:
+            key = key_val[0]
+            extra_args[key] = True  # handle flags without value
 
 # --- Validate required arguments for synthetic ---
 if args.data == "synthetic":
-    if args.snr is None or args.filter_type is None or args.filter_size is None:
+    if args.noise_power is None or args.filter_type is None or args.filter_size is None:
         parser.error(
-            "When using synthetic data, you must provide --snr , --filter_type and --filter_size."
+            "When using synthetic data, you must provide --noise_power , --filter_type and --filter_size."
         )
         sys.exit(1)
 
@@ -105,7 +153,7 @@ if args.data == "real":
         noisy_signal, noise = res
         K_true = BEST_REAL_K
         # Either try different filter sizes or use the best one
-        if args.K == "best":
+        if not args.K_sweep:
             # Use best filter size
             Ks_to_try = [BEST_REAL_K]
         else:
@@ -121,9 +169,15 @@ else:
         NUM_SAMPLES,
         LOW,
         HIGH,
+        SWITCHING_INTERVAL,
+        # Filter parameters
         args.filter_size,
         args.filter_type,
-        args.snr,
+        args.filter_changing_speed,
+        # Noise parameters
+        args.noise_power,
+        args.noise_power_change,
+        args.noise_distribution_change,
     )
     if res is None:
         sys.exit(1)
@@ -131,7 +185,7 @@ else:
         noisy_signal, true_signal, noise, _ = res
         K_true = args.filter_size
         # Either try different filter sizes or use the true one
-        if args.K == "best":
+        if not args.K_sweep:
             Ks_to_try = [K_true]
         else:
             Ks_to_try = list(range(1, K_true + 5))
@@ -144,19 +198,19 @@ if args.method not in methods.keys():
     sys.exit(1)
 else:
     # Select adaptive filtering method
-    filter_signal = methods[args.method]
+    filter_function = methods[args.method]
 
 print(f"Running '{args.method}' method on '{args.data}' data...")
 
 # Perform adaptive filtering
-if filter_signal is not None:
+if filter_function is not None:
     # TEST ONE METHOD
 
     # Try out for each filter size
     for K in Ks_to_try:
         print(f"Trying filter size {K}...")
         # TODO: Measure running time
-        filtered_signal = filter_signal(noisy_signal, noise, K)
+        filtered_signal = filter_function(noisy_signal, noise, K, extra_args)
         if filtered_signal is None:
             sys.exit(1)
 
@@ -176,7 +230,7 @@ if filter_signal is not None:
             print(f"MSE: {mse}")
             # TODO: Compute and measure more stuff...
 
-        plot_signals(signals_to_plot, title=f"{args.method} (K={K})")
+        plot_signals(signals_to_plot)
         # plot_psd(signals_to_plot)
 else:
     # TEST AND COMPARE ALL METHODS
@@ -186,7 +240,7 @@ else:
         if fs is None:
             continue
         # Filter with each method
-        filtered_signal = fs(noisy_signal, noise, K=K_true)
+        filtered_signal = fs(noisy_signal, noise, K_true, extra_args)
         if filtered_signal is None:
             sys.exit(1)
         filtered_signals.append((method_name, filtered_signal))
