@@ -8,7 +8,15 @@ In case of error, print error message and return None."""
 LIMIT = 3
 
 
-def filter_gwf(noisy_signal, noise, K):
+def filter_signal_gwf_fc(noisy_signal, noise, K, args):
+    return _filter_gwf_hard_cut(noisy_signal, noise, K, False, args)
+
+
+def filter_signal_gwf_swc(noisy_signal, noise, K, args):
+    return _filter_gwf_hard_cut(noisy_signal, noise, K, True, args)
+
+
+def _filter_gwf_hard_cut(noisy_signal, noise, K, use_sliding_window, args):
     # In lecture: noisy_signal = D
     #             noise = X
 
@@ -17,10 +25,13 @@ def filter_gwf(noisy_signal, noise, K):
     filtered_signal[:K] = noisy_signal[:K]  # Initialize first K samples
     # We simulate an on-the-fly situation where we store the last K samples
     # We can only start estimating the correlation matrix after K samples
-    """for n in range(K, N):
+    for n in range(K, N):
         # Use last K samples
         # Compute sample correlation matrix for noise
-        n_samples_Rx = min(n, 50 * K)  # n
+        if use_sliding_window:
+            n_samples_Rx = min(n, args["window_size"] * K)
+        else:
+            n_samples_Rx = n
         n_samples_rdx = n_samples_Rx
 
         x = noise[n - n_samples_Rx : n]
@@ -61,10 +72,16 @@ def filter_gwf(noisy_signal, noise, K):
                 f"Warning: Filtered signal value exceeds limit at index {n-1}: {filtered_signal[n-1]}"
             )
     return filtered_signal
-    """
+
+
+def filter_gwf_ema(noisy_signal, noise, K, args):
+    N = len(noisy_signal)
+    filtered_signal = np.zeros(N)
+    filtered_signal[:K] = noisy_signal[:K]  # Initialize first K samples
+    filtered_signal[:K] = noisy_signal[:K]
     R_x = np.zeros((K, K))
     r_dx = np.zeros(K)
-    lambda_ = 0.999
+    lambda_ = args["lambda"]
 
     for n in range(K, N):
         x = noise[n - K + 1 : n + 1][::-1]
