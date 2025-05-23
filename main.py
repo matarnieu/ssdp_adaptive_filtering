@@ -190,6 +190,9 @@ if args.auto_tune and mode == "synthetic" and method in ("nlms", "rls"):
         args.filter_size = K_opt
         print(f"[auto_tune] RLS  → λ={lam_opt}, δ={delta_opt}, K={K_opt}")
 
+    # ←—— NEW LINE: after tuning, only sweep the tuned K
+    Ks_to_try = [args.filter_size]
+
 # --- Validate synthetic prerequisites ---
 if args.data == "synthetic":
     if args.noise_power is None or args.filter_type is None or args.filter_size is None:
