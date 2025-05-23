@@ -125,14 +125,6 @@ for arg in unknown:
         else:
             extra_args[kv[0]] = True
 
-# --- Validate synthetic prerequisites ---
-if args.data == "synthetic":
-    if args.noise_power is None or args.filter_type is None or args.filter_size is None:
-        parser.error(
-            "When using synthetic data, you must provide --noise_power, --filter_type and --filter_size."
-        )
-        sys.exit(1)
-
 # --- Load or generate signals ------------------------------------------
 mode   = args.data         # "real" or "synthetic"
 method = args.method       # e.g. "nlms" or "rls"
@@ -197,6 +189,14 @@ if args.auto_tune and mode == "synthetic" and method in ("nlms", "rls"):
         args.delta = delta_opt
         args.filter_size = K_opt
         print(f"[auto_tune] RLS  → λ={lam_opt}, δ={delta_opt}, K={K_opt}")
+
+# --- Validate synthetic prerequisites ---
+if args.data == "synthetic":
+    if args.noise_power is None or args.filter_type is None or args.filter_size is None:
+        parser.error(
+            "When using synthetic data, you must provide --noise_power, --filter_type and --filter_size."
+        )
+        sys.exit(1)
 
 # --- RUN SELECTED FILTERING METHOD -------------------------------------
 if method not in methods:
