@@ -123,6 +123,10 @@ parser.add_argument(
     help="Size of impulse response of filter used to generate synthetic data",
 )
 
+parser.add_argument("--auto_tune", action="store_true",
+                    help="Run a quick grid-search on the first 1000 samples to pick best NLMS/RLS parameters")
+
+
 # NLMS
 parser.add_argument("--mu",   type=float, default=0.8,
                     help="NLMS step-size μ (0<μ≤2)")
