@@ -14,6 +14,8 @@ from methods.baseline import get_baseline_signal
 from methods.nlms import filter_signal_nlms
 from methods.rls  import filter_signal_rls
 
+import utils.tuning as tuning
+
 from data_loader import load_real_data, generate_synthetic_data
 from analyzer import plot_signals, compute_mse, plot_mses, plot_psd, plot_snr_sweep
 
@@ -157,6 +159,29 @@ for arg in unknown:
             extra_args[key] = True  # handle flags without value
 
 # --- Validate required arguments for synthetic ---
+# only synthetic mode has ground truth S
+if args.auto_tune and mode == "synthetic":
+    if method == "nlms":
+        μ_opt, K_opt = tuning.tune_nlms(D, X, S,
+                                        mu_list=(0.4,0.6,0.8,1.0),
+                                        L_list=(32,48,64),
+                                        eps=args.eps,
+                                        val_len=1000)
+        args.mu = μ_opt
+        args.filter_size = K_opt
+        print(f"[auto_tune] NLMS → μ={μ_opt}, K={K_opt}")
+
+    elif method == "rls":
+        lam_opt, delta_opt, K_opt = tuning.tune_rls(D, X, S,
+                                                    lam_list=(0.997,0.998,0.999),
+                                                    delta_list=(1,5,10),
+                                                    L_list=(32,64),
+                                                    val_len=1000)
+        args.lam = lam_opt
+        args.delta = delta_opt
+        args.filter_size = K_opt
+        print(f"[auto_tune] RLS → λ={lam_opt}, δ={delta_opt}, K={K_opt}")
+
 if args.data == "synthetic":
     if args.noise_power is None or args.filter_type is None or args.filter_size is None:
         parser.error(
