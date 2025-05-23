@@ -35,9 +35,7 @@ def filter_signal_sgd(noisy_signal, noise, K, args):
         e = dn - y
         output[n] = e
 
-        t = n-K
-        args['epoch'] = t
-        
+        t = n-K        
         mu_n = _update_mu(args)
         filter_ = filter_ + mu_n*Xn*e
     return output
