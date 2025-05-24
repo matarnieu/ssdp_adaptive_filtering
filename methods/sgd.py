@@ -1,6 +1,6 @@
 import numpy as np
 
-def _update_mu(args, t):
+def _update_mu(args):
     """
         if mode is specified, will use a time varying mu.
     """
@@ -10,9 +10,12 @@ def _update_mu(args, t):
     if mode == None:
         return mu
     
-    elif mode == 'inverse_time':
-        lambda_ = args.get('lambda')
+    lambda_ = args.get('lambda')
+    t = args.get('epoch')
+    if mode == 'inverse_time':
         return mu/(1 + lambda_*t)
+    elif mode == 'exponential_decay':
+        return mu*np.exp(-lambda_*t)
     else:
         raise NotImplemented
 """Use stochastic gradient descent to extract filtered signal from
@@ -32,8 +35,10 @@ def filter_signal_sgd(noisy_signal, noise, K, args):
         e = dn - y
         output[n] = e
 
-        t = n-K        
-        mu_n = _update_mu(args, t)
+        t = n-K
+        args['epoch'] = t
+        
+        mu_n = _update_mu(args)
         filter_ = filter_ + mu_n*Xn*e
     return output
 
