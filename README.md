@@ -55,3 +55,22 @@ EXAMPLES:
 python main.py synthetic gwf_ema --noise_power 0.2  --filter_type exponential_decay --filter_size 10 --filter_changing_speed 0  --lambda=0.999
 
 python main.py synthetic gwf_fc --noise_power 0.4  --filter_type mixed --filter_size 10 --filter_changing_speed 1.0 --noise_distribution_change
+
+python main.py synthetic gwf_swc --noise_power 0.3  --filter_type exponential_decay --filter_size 10 --filter_changing_speed 0.0 --window_size=70
+
+python main.py synthetic gwf_ema --noise_power 0.3  --filter_type exponential_decay --filter_size 10 --lambda=0.999 --noise_distribution_change
+
+
+HOW TO USE OPTIMIZE_PARAMS.PY:
+- Note: Has to be executed from the project directory as: 
+
+python run_scripts/optimize_params.py
+
+- Put the name of the folder in which the results will be stored under ## NAME ##.
+    - The results will be stored in the folder results/optimize_params/<name>
+- Put the command without the parameters to tune under ## RUN COMMAND ##
+- Put the parameters to tune under ## PARAMETERS ##, e.g.
+    --lambda=[0.1, 0.5, 1.0]
+    --mu=[0.1, 0.2, 0.3]
+- The MSE for all different parameter combinations will be stored in results/optimize_params/<name>/results.csv
+- The best MSE and corresponding parameters will be printed
