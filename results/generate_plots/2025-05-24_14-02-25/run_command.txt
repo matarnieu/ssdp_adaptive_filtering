@@ -1,0 +1,24 @@
+## DEFAULT SETTINGS ##
+--noise_power 0.3
+--filter_type exponential_decay
+--filter_size 10
+--filter_changing_speed 0.0
+
+## RUN COMMANDS ##
+# gwf_ssc_stationary_fixed.png
+python main.py synthetic gwf_fc
+
+# gwf_swc_stationary_fixed.png
+python main.py synthetic gwf_swc --window_size=70
+
+# gwf_ema_stationary_fixed.png
+python main.py synthetic gwf_ema --lambda=0.999
+
+# gwf_ssc_stationary_smooth.png
+python main.py synthetic gwf_fc --filter_changing_speed 0.8
+
+# gwf_swc_stationary_smooth.png
+python main.py synthetic gwf_swc --filter_changing_speed 0.8 --window_size=70
+
+# gwf_ema_stationary_smooth.png
+python main.py synthetic gwf_ema --filter_changing_speed 0.8 --lambda=0.999

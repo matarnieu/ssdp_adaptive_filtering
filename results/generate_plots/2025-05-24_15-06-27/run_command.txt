@@ -1,0 +1,12 @@
+## DEFAULT SETTINGS ##
+--noise_power 0.3
+--filter_type exponential_decay
+--filter_size 10
+--filter_changing_speed 0.0
+
+## RUN COMMANDS ##
+# gwf_swc_stationary_abrupt.png
+python main.py synthetic gwf_swc --filter_type mixed --window_size=20
+
+# gwf_ema_stationary_abrupt.png
+python main.py synthetic gwf_ema --filter_type mixed --lambda=0.995

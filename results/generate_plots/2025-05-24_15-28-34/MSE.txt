@@ -1,0 +1,2 @@
+gwf_swc_power_change_fixed.png 0.005674
+gwf_ema_power_change_fixed.png 0.001867
