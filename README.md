@@ -62,9 +62,11 @@ python main.py synthetic gwf_ema --noise_power 0.3  --filter_type exponential_de
 
 
 HOW TO USE OPTIMIZE_PARAMS.PY:
-- Note: Has to be executed from the project directory as: 
+Note: Has to be executed from the project directory as: 
 
 python run_scripts/optimize_params.py
+
+In order to set up the optimization, change optimize_params.txt as follows:
 
 - Put the name of the folder in which the results will be stored under ## NAME ##.
     - The results will be stored in the folder results/optimize_params/<name>
