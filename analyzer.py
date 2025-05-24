@@ -4,7 +4,7 @@ import seaborn as sns
 from scipy.signal import welch
 
 
-def plot_signals(signals, window=None):
+def plot_signals(signals, window=None, filename=None, show=False):
     """
     Visualize list of signals with given labels.
     signals: list of (label, np.array)
@@ -23,7 +23,11 @@ def plot_signals(signals, window=None):
     plt.ylabel("Amplitude")
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    if filename is not None:
+        plt.savefig(filename)
+        print(f"Plot saved as {filename}")
+    if show:
+        plt.show()
 
 
 def compute_mse(true_signal, filtered_signal):

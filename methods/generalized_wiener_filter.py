@@ -29,7 +29,7 @@ def _filter_gwf_hard_cut(noisy_signal, noise, K, use_sliding_window, args):
         # Use last K samples
         # Compute sample correlation matrix for noise
         if use_sliding_window:
-            n_samples_Rx = min(n, args["window_size"] * K)
+            n_samples_Rx = min(n, int(args["window_size"]) * K)
         else:
             n_samples_Rx = n
         n_samples_rdx = n_samples_Rx

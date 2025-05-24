@@ -12,7 +12,7 @@ from methods.generalized_wiener_filter import (
 from methods.sgd import filter_signal_sgd
 from methods.baseline import get_baseline_signal
 from methods.nlms import filter_signal_nlms
-from methods.rls  import filter_signal_rls
+from methods.rls import filter_signal_rls
 
 from data_loader import load_real_data, generate_synthetic_data
 from analyzer import plot_signals, compute_mse, plot_mses, plot_psd, plot_snr_sweep
@@ -21,7 +21,7 @@ import os
 
 # Number of samples in synthetic signal
 NUM_SAMPLES = 10000
-SWITCHING_INTERVAL = 1400
+SWITCHING_INTERVAL = 1300
 # Define synthetic sinus signal
 LOW, HIGH = 0, 1000 * np.pi
 # Seed for reproducibility of randomness
@@ -42,8 +42,8 @@ methods = {
     "gwf_swc": filter_signal_gwf_swc,
     "gwf_ema": filter_signal_gwf_ema,
     "sgd": filter_signal_sgd,
-    "nlms" : filter_signal_nlms,
-    "rls"  : filter_signal_rls,
+    "nlms": filter_signal_nlms,
+    "rls": filter_signal_rls,
     "all": None,
 }
 
@@ -73,6 +73,21 @@ parser.add_argument(
     choices=list(methods.keys()),
     help="Filtering method to apply.",
 )
+parser.add_argument(
+    "--dont_show_plot",
+    dest="dont_show_plot",
+    action="store_true",
+    default=False,
+    help="Dont show plot",
+)
+
+parser.add_argument(
+    "--plot_filename",
+    dest="plot_filename",
+    default=None,
+    help="Filename of stored plot",
+)
+
 parser.add_argument(
     "--K_sweep",
     dest="K_sweep",
@@ -123,20 +138,7 @@ parser.add_argument(
     help="Size of impulse response of filter used to generate synthetic data",
 )
 
-# NLMS
-parser.add_argument("--mu",   type=float, default=0.8,
-                    help="NLMS step-size μ (0<μ≤2)")
-parser.add_argument("--eps",  type=float, default=1e-6,
-                    help="NLMS regulariser ε")
-
-# RLS
-parser.add_argument("--lam",  type=float, default=0.999,
-                    help="RLS forgetting factor λ (≈1)")
-parser.add_argument("--delta",type=float, default=10.0,
-                    help="RLS δ for initial P(0)=I/δ")
-
 args, unknown = parser.parse_known_args()
-print(args.noise_distribution_change)
 # Convert unknown args into a dictionary
 extra_args = {}
 for arg in unknown:
@@ -246,7 +248,11 @@ if filter_function is not None:
             print(f"MSE: {mse}")
             # TODO: Compute and measure more stuff...
 
-        plot_signals(signals_to_plot)
+        plot_signals(
+            signals_to_plot,
+            filename=args.plot_filename,
+            show=not args.dont_show_plot,
+        )
         # plot_psd(signals_to_plot)
 else:
     # TEST AND COMPARE ALL METHODS

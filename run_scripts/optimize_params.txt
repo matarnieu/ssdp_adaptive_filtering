@@ -1,0 +1,8 @@
+## NAME ##
+sgd_stationary_fixed_lambda_and_mu
+## RUN COMMAND ##
+python main.py synthetic sgd --noise_power 0.3  --filter_type exponential_decay --filter_size 10
+
+## PARAMETERS ##
+--lambda=[0.000001, 0.000005, 0.00001, 0.0005, 0.001, 0.005, 0.1]
+--mu=[0.0000001, 0.0000005, 0.000001, 0.000005, 0.00001, 0.00005, 0.0001, 0.0005, 0.001]

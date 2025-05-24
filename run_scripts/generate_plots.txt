@@ -1,0 +1,12 @@
+## DEFAULT SETTINGS ##
+--noise_power 0.3
+--filter_type exponential_decay
+--filter_size 10
+--filter_changing_speed 0.0
+
+## RUN COMMANDS ##
+# gwf_swc_power_change_fixed.png
+python main.py synthetic gwf_swc --filter_type exponential_decay --noise_power_change --window_size=70
+
+# gwf_ema_power_change_fixed.png
+python main.py synthetic gwf_ema --filter_type exponential_decay --noise_power_change --lambda=0.999
