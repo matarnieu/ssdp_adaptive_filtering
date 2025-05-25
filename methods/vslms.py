@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def filter_signal_vslms(noisy_signal, noise, K, args):
     """
     Apply time-varying step-size LMS to filter a noisy signal.
@@ -19,21 +20,22 @@ def filter_signal_vslms(noisy_signal, noise, K, args):
         if noise.shape[0] != N:
             print("Error: noisy_signal and noise must have the same length.")
             return None
-        
+
         # Signal must be at least as long as the filter length
         if N < K:
             print("Error: signal length must be at least equal to K.")
             return None
 
-        mu = args.get("mu", 0.01)
-        lambda_ = args.get("lambda", 0.01)
-        
+        mu = args["mu"]
+        lambda_ = args["lambda"]
+
         # Basic validation
         if lambda_ < 0 or mu <= 0:
             print("Error: 'mu' must be > 0 and 'lambda' must be >= 0.")
             return None
 
         filter_ = np.zeros(K)
+        filter_history = [np.copy(filter_) for _ in range(N)]
         output = np.zeros(N)
         for n in range(K - 1, N):
             # Get the current input window (reversed for convolution)
@@ -42,7 +44,7 @@ def filter_signal_vslms(noisy_signal, noise, K, args):
             dn = noisy_signal[n]
             # Filter output
             y = np.dot(Xn, filter_)
-            # Error between desired and output            
+            # Error between desired and output
             e = dn - y
             # Save error (filtered signal)
             output[n] = e
@@ -51,8 +53,9 @@ def filter_signal_vslms(noisy_signal, noise, K, args):
             mu_n = mu / (1 + lambda_ * t)
             # Update filter coefficients using LMS rule
             filter_ += mu_n * Xn * e
+            filter_history[n] = np.copy(filter_)
 
-        return output
+        return output, filter_history
 
     except Exception as e:
         print(f"Error: {e}")
