@@ -1,7 +1,7 @@
 ## DEFAULT SETTINGS ##
 --noise_power 0.3
 --filter_type exponential_decay
---filter_size 10
+--filter_size 50
 --filter_changing_speed 0.0
 
 ## RUN COMMANDS ##
@@ -35,11 +35,15 @@ python main.py synthetic gwf_swc --window_size=70 --noise_power_change
 # gwf_ema_powerchange_fixed.png
 python main.py synthetic gwf_ema --lambda=0.9988 --noise_power_change
 
+# lms_stationary_fixed.png
+python main.py synthetic lms --mu=0.01
+
 # lms_stationary_smooth.png
-python main.py synthetic sgd --filter_changing_speed 0.5 --mu=0.1
+python main.py synthetic lms --filter_changing_speed 0.5 --mu=0.01
 
-# nlms_stationary_smooth.png
-python main.py synthetic nlms --filter_changing_speed 0.5 --mu=0.8 --eps=1e-6
+# lms_stationary_abrupt.png
+python main.py synthetic lms --filter_type mixed --mu=0.01
 
-# rls_stationary_smooth.png
-python main.py synthetic rls --filter_changing_speed 0.5 --lambda=0.999 --delta=10.0
+# lms_powerchange_fixed.png
+python main.py synthetic lms --mu=0.01 --noise_power_change
+
