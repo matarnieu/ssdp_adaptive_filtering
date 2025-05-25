@@ -1,57 +1,90 @@
+# methods/lms.py
+
 import numpy as np
 
 
-def filter_signal_lms(noisy_signal, noise, K, args):
+# --------------------------------------------------------------------- #
+def _lms_core(
+    d: np.ndarray,
+    x: np.ndarray,
+    mu: float,
+    K: int,
+) -> tuple[np.ndarray, list[np.ndarray]]:
+    """
+    Core LMS adaptive filter.
+
+    Parameters
+    ----------
+    d   : np.ndarray
+        Desired signal (noisy observation).
+    x   : np.ndarray
+        Input signal (reference noise).
+    mu  : float
+        Adaptation step size (learning rate).
+    K   : int
+        Filter length (number of coefficients).
+
+    Returns
+    -------
+    e   : np.ndarray
+        Error signal (denoised output).
+    w_hist : list of np.ndarray
+        History of filter coefficients at each time step.
+    """
+    N = len(d)
+    if len(x) != N:
+        raise ValueError("Signals 'd' and 'x' must have the same length.")
+    if N < K:
+        raise ValueError("Signal length must be at least equal to filter length K.")
+    if mu <= 0:
+        raise ValueError("Step size 'mu' must be greater than zero.")
+
+    w = np.zeros(K, dtype=np.float32)
+    w_hist = [np.copy(w) for _ in range(N)]
+    e = np.zeros(N, dtype=np.float32)
+
+    for n in range(K - 1, N):
+        x_vec = x[n - K + 1 : n + 1][::-1]
+        y = np.dot(w, x_vec)
+        e[n] = d[n] - y
+        w += mu * x_vec * e[n]
+        w_hist[n] = np.copy(w)
+
+    return e, w_hist
+
+
+# --------------------------------------------------------------------- #
+def filter_signal_lms(
+    noisy_signal: np.ndarray,
+    noise: np.ndarray,
+    K: int,
+    args: dict,
+) -> tuple[np.ndarray, list[np.ndarray]] | None:
     """
     Apply LMS adaptive filtering to denoise a signal.
 
-    Parameters:
-    - noisy_signal: observed signal (numpy array)
-    - noise: reference noise signal (numpy array)
-    - K: filter length (int)
-    - args: dict with optional key 'mu' (float)
+    Parameters
+    ----------
+    noisy_signal : np.ndarray
+        Observed signal with noise.
+    noise        : np.ndarray
+        Reference noise signal.
+    K            : int
+        Filter length (number of coefficients).
+    args         : dict
+        Optional parameters:
+            - 'mu': step size (default = 0.1)
 
-    Returns:
-    - filtered_signal: numpy array of shape (N,), or None on error
+    Returns
+    -------
+    tuple[np.ndarray, list[np.ndarray]]
+        Error signal and filter coefficient history,
+        or None on error.
     """
     try:
-        N = noisy_signal.shape[0]
-        # Check that noise and signal have the same length
-        if noise.shape[0] != N:
-            print("Error: noisy_signal and noise must have the same length.")
-            return None
-        # Signal must be at least as long as the filter length
-        if N < K:
-            print("Error: signal length must be at least equal to K.")
-            return None
+        mu = float(args.get("mu", 0.1))
+        return _lms_core(noisy_signal, noise, mu, K)
 
-        mu = args.get("mu", 0.1)
-
-        # Basic validation
-        if mu <= 0:
-            print("Error: 'mu' must be > 0")
-            return None
-
-        filter_ = np.zeros(K)
-        filter_history = [np.copy(filter_) for _ in range(N)]
-        output = np.zeros(N)
-
-        for n in range(K - 1, N):
-            # Get the current input window (reversed for convolution)
-            Xn = noise[n - K + 1 : n + 1][::-1]
-            # Desired signal (noisy observation)
-            dn = noisy_signal[n]
-            # Filter output
-            y = np.dot(Xn, filter_)
-            # Error between desired and output
-            e = dn - y
-            output[n] = e
-            # Update filter coefficients using LMS rule
-            filter_ += mu * Xn * e
-            filter_history[n] = np.copy(filter_)
-
-        return output, filter_history
-
-    except Exception as e:
-        print(f"Error: {e}")
+    except Exception as err:
+        print(f"[LMS Error] {err}")
         return None
