@@ -1,58 +1,96 @@
+# methods/nlms.py
+
 import numpy as np
 
 
-def filter_signal_nlms(noisy_signal, noise, K, args):
+# --------------------------------------------------------------------- #
+def _nlms_core(
+    d: np.ndarray,
+    x: np.ndarray,
+    mu: float,
+    eps: float,
+    K: int,
+) -> tuple[np.ndarray, list[np.ndarray]]:
     """
-    Apply LMS adaptive filtering to denoise a signal.
+    Core Normalized LMS (NLMS) adaptive filter.
 
-    Parameters:
-    - noisy_signal: observed signal (numpy array)
-    - noise: reference noise signal (numpy array)
-    - K: filter length (int)
-    - args: dict with optional key 'mu' (float)
+    Parameters
+    ----------
+    d    : np.ndarray
+        Desired signal (noisy observation).
+    x    : np.ndarray
+        Input signal (reference noise).
+    mu   : float
+        Base step size (learning rate).
+    eps  : float
+        Regularization term to prevent division by zero.
+    K    : int
+        Filter length (number of coefficients).
 
-    Returns:
-    - filtered_signal: numpy array of shape (N,), or None on error
+    Returns
+    -------
+    e     : np.ndarray
+        Error signal (denoised output).
+    w_hist: list of np.ndarray
+        History of filter coefficients at each time step.
+    """
+    N = len(d)
+    if len(x) != N:
+        raise ValueError("Signals 'd' and 'x' must have the same length.")
+    if N < K:
+        raise ValueError("Signal length must be at least equal to filter length K.")
+    if mu <= 0 or eps <= 0:
+        raise ValueError("Parameters 'mu' and 'eps' must be greater than zero.")
+
+    w = np.zeros(K, dtype=np.float32)
+    e = np.zeros(N, dtype=np.float32)
+    w_hist = [np.copy(w) for _ in range(N)]
+
+    for n in range(K - 1, N):
+        x_vec = x[n - K + 1 : n + 1][::-1]
+        y = np.dot(w, x_vec)
+        e[n] = d[n] - y
+        norm_factor = np.dot(x_vec, x_vec) + eps
+        mu_n = mu / norm_factor
+        w += mu_n * x_vec * e[n]
+        w_hist[n] = np.copy(w)
+
+    return e, w_hist
+
+
+# --------------------------------------------------------------------- #
+def filter_signal_nlms(
+    noisy_signal: np.ndarray,
+    noise: np.ndarray,
+    K: int,
+    args: dict,
+) -> tuple[np.ndarray, list[np.ndarray]] | None:
+    """
+    Apply Normalized LMS (NLMS) adaptive filtering to denoise a signal.
+
+    Parameters
+    ----------
+    noisy_signal : np.ndarray
+        Observed signal with noise.
+    noise        : np.ndarray
+        Reference noise signal.
+    K            : int
+        Filter length (number of coefficients).
+    args         : dict
+        Optional parameters:
+            - 'mu'  : base step size (default = 0.1)
+            - 'eps' : regularization term (default = 1e-8)
+
+    Returns
+    -------
+    tuple[np.ndarray, list[np.ndarray]]
+        Error signal and filter coefficient history, or None on error.
     """
     try:
-        N = noisy_signal.shape[0]
-        # Check that noise and signal have the same length
-        if noise.shape[0] != N:
-            print("Error: noisy_signal and noise must have the same length.")
-            return None
-        # Signal must be at least as long as the filter length
-        if N < K:
-            print("Error: signal length must be at least equal to K.")
-            return None
+        mu = float(args.get("mu", 0.1))
+        eps = float(args.get("eps", 1e-8))
+        return _nlms_core(noisy_signal, noise, mu, eps, K)
 
-        mu = args.get("mu", 0.1)
-        eps = args.get('eps', 1e-8)
-        # Basic validation
-        if mu <= 0:
-            print("Error: 'mu' must be > 0")
-            return None
-
-        filter_ = np.zeros(K)
-        filter_history = [np.copy(filter_) for _ in range(N)]
-        output = np.zeros(N)
-
-        for n in range(K - 1, N):
-            # Get the current input window (reversed for convolution)
-            Xn = noise[n - K + 1 : n + 1][::-1]
-            # Desired signal (noisy observation)
-            dn = noisy_signal[n]
-            # Filter output
-            y = np.dot(Xn, filter_)
-            # Error between desired and output
-            e = dn - y
-            output[n] = e
-            mu_n = mu/(np.linalg.norm(Xn)**2 + eps)
-            # Update filter coefficients using NLMS rule
-            filter_ += mu_n * Xn * e
-            filter_history[n] = np.copy(filter_)
-
-        return output, filter_history
-
-    except Exception as e:
-        print(f"Error: {e}")
+    except Exception as err:
+        print(f"[NLMS Error] {err}")
         return None
