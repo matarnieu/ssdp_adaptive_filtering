@@ -92,14 +92,6 @@ parser.add_argument(
     help="Filename of stored plot",
 )
 
-parser.add_argument(
-    "--print_filter_distances",
-    dest="print_filter_distances",
-    action="store_true",
-    default=False,
-    help="Print complete history of filter distances.",
-)
-
 # Optional arguments (only needed for synthetic data)
 parser.add_argument(
     "--noise_power",
@@ -215,8 +207,7 @@ print(f"Running '{args.method}' method on '{args.data}' data...")
 filtered_signal = filter_function(noisy_signal, noise, K, extra_args)
 if filtered_signal is None:
     sys.exit(1)
-elif isinstance(filtered_signal, tuple):
-    # If the method returns a tuple, it means it also returns filter history
+elif mode == "synthetic" and isinstance(filtered_signal, tuple):
     filtered_signal, filter_history = filtered_signal
     filter_distances = distances = np.linalg.norm(
         np.array(filter_history) - np.array(true_filter_history),
@@ -255,6 +246,7 @@ if true_signal is not None:
     print(f"MSE before filtering: {mse_before_filtering}")
     mse = compute_mse(true_signal, filtered_signal)
     print(f"MSE: {mse}")
+    # TODO: Compute and measure more stuff...
 
 plot_signals(
     signals_to_plot,
