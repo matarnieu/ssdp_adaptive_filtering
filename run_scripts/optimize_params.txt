@@ -1,8 +1,6 @@
 ## NAME ##
-sgd_stationary_fixed_lambda_and_mu
+sgd_stationary_smooth
 ## RUN COMMAND ##
-python main.py synthetic sgd --noise_power 0.3  --filter_type exponential_decay --filter_size 10 --mode=inverse_time
-
+python main.py synthetic sgd --noise_power 0.3  --filter_type exponential_decay --filter_size 10 --filter_changing_speed=0.5
 ## PARAMETERS ##
---lambda=[0.000001, 0.000005, 0.00001, 0.0005, 0.001, 0.005, 0.1, 0.5, 1.0, 5.0, 10.0, 20.0, 50.0]
---mu=[0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.01, 0.1, 0.5, 1.0, 5.0, 10.0]
+--mu=[0.01, 0.1, 0.5, 1.0, 5.0, 10.0 , 25.0, 50.0]

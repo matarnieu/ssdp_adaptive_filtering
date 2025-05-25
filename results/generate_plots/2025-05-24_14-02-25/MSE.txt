@@ -1,6 +1,0 @@
-gwf_ssc_stationary_fixed.png 0.001818
-gwf_swc_stationary_fixed.png 0.005006
-gwf_ema_stationary_fixed.png 0.002597
-gwf_ssc_stationary_smooth.png 0.022782
-gwf_swc_stationary_smooth.png 0.005509
-gwf_ema_stationary_smooth.png 0.005153

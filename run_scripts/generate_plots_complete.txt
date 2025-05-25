@@ -9,19 +9,19 @@
 python main.py synthetic gwf_fc
 
 # gwf_swc_stationary_fixed.png
-python main.py synthetic gwf_swc --window_size=70
+python main.py synthetic gwf_swc --window_size=100
 
 # gwf_ema_stationary_fixed.png
 python main.py synthetic gwf_ema --lambda=0.999
 
 # gwf_ssc_stationary_smooth.png
-python main.py synthetic gwf_fc --filter_changing_speed 0.8
+python main.py synthetic gwf_fc --filter_changing_speed 0.5
 
 # gwf_swc_stationary_smooth.png
-python main.py synthetic gwf_swc --filter_changing_speed 0.8 --window_size=70
+python main.py synthetic gwf_swc --filter_changing_speed 0.5 --window_size=100
 
 # gwf_ema_stationary_smooth.png
-python main.py synthetic gwf_ema --filter_changing_speed 0.8 --lambda=0.999
+python main.py synthetic gwf_ema --filter_changing_speed 0.5 --lambda=0.999
 
 # gwf_swc_stationary_abrupt.png
 python main.py synthetic gwf_swc --filter_type mixed --window_size=20
@@ -29,3 +29,8 @@ python main.py synthetic gwf_swc --filter_type mixed --window_size=20
 # gwf_ema_stationary_abrupt.png
 python main.py synthetic gwf_ema --filter_type mixed --lambda=0.995
 
+# gwf_swc_stationary_fixed.png
+python main.py synthetic gwf_swc --window_size=100 --noise_power_change
+
+# gwf_ema_stationary_fixed.png
+python main.py synthetic gwf_ema --lambda=0.999 --noise_power_change

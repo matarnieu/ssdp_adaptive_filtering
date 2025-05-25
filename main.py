@@ -45,7 +45,7 @@ methods = {
     "sgd": filter_signal_sgd,
     "nlms": filter_signal_nlms,
     "rls": filter_signal_rls,
-    "kalman":  filter_signal_kalman,
+    "kalman": filter_signal_kalman,
     "all": None,
 }
 
@@ -140,26 +140,36 @@ parser.add_argument(
     help="Size of impulse response of filter used to generate synthetic data",
 )
 
-parser.add_argument("--Q",      type=float, default=1e-6,
-                    help="Kalman process-noise variance Q")
+parser.add_argument(
+    "--Q", type=float, default=1e-6, help="Kalman process-noise variance Q"
+)
 
-parser.add_argument("--R",      type=float, default=None,
-                    help="Kalman measurement-noise variance R "
-                         "(default: var of first 1 000 samples)")
+parser.add_argument(
+    "--R",
+    type=float,
+    default=None,
+    help="Kalman measurement-noise variance R " "(default: var of first 1 000 samples)",
+)
 
-parser.add_argument("--delta0", type=float, default=0.1,
-                    help="Kalman initial inverse-covariance factor δ₀")
+parser.add_argument(
+    "--delta0",
+    type=float,
+    default=0.1,
+    help="Kalman initial inverse-covariance factor δ₀",
+)
 
 args, unknown = parser.parse_known_args()
 # Convert unknown args into a dictionary
 extra_args = {}
 
 if args.method == "kalman":
-    extra_args.update({
-        "Q":      args.Q,
-        "R":      args.R,
-        "delta0": args.delta0,
-    })
+    extra_args.update(
+        {
+            "Q": args.Q,
+            "R": args.R,
+            "delta0": args.delta0,
+        }
+    )
 
 for arg in unknown:
     if arg.startswith("--"):
@@ -175,8 +185,8 @@ for arg in unknown:
             extra_args[key] = True  # handle flags without value
 
 # --- Validate required arguments for synthetic ---
-mode   = args.data         # "real" or "synthetic"
-method = args.method       # e.g. "nlms" or "rls"
+mode = args.data  # "real" or "synthetic"
+method = args.method  # e.g. "nlms" or "rls"
 
 if args.data == "synthetic":
     if args.noise_power is None or args.filter_type is None or args.filter_size is None:
@@ -189,7 +199,7 @@ if mode == "real":
     res = load_real_data(NOISY_SIGNAL_PATH, NOISE_SIGNAL_PATH)
     if res is None:
         sys.exit(1)
-    noisy_signal, noise, sr  = res
+    noisy_signal, noise, sr = res
     K_true = BEST_REAL_K
     Ks_to_try = [BEST_REAL_K] if not args.K_sweep else [50, 100, 200, 500, 1000]
     try:
@@ -233,7 +243,7 @@ if filter_function is not None:
     # TEST ONE METHOD
 
     # Try out for each filter size
-    for K in (Ks_to_try if method != "all" else [K_true]):
+    for K in Ks_to_try if method != "all" else [K_true]:
         print(f"Trying filter size {K}...")
         # TODO: Measure running time
         filtered_signal = filter_function(noisy_signal, noise, K, extra_args)
@@ -242,7 +252,7 @@ if filter_function is not None:
         # If method returns some extreme values, delete them
         filtered_signal = np.clip(filtered_signal, -2, 2)
 
-        if mode == 'real':
+        if mode == "real":
             out_path = f"C:/Users/Admin/Downloads/ssdp_adaptive_filtering-master (3)/ssdp_adaptive_filtering-master/data/clean_{method}_K{K}.wav"
             sf.write(out_path, filtered_signal, 44100, subtype="PCM_24")
             print(f"[info] cleaned signal written → {out_path}")

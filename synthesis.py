@@ -102,15 +102,33 @@ def generate_pink_noise(mean, std, n_samples):
     return pink
 
 
-def _generate_chaotic_noise(mean, std, size, r=4.0, x0=0.51):
-    # Generate a chaotic time series using the logistic map.
-    # Output is scaled to mean and std.
-    x = np.zeros(size)
-    x[0] = x0
-    for n in range(1, size):
-        x[n] = r * x[n - 1] * (1 - x[n - 1])
+import numpy as np
+from scipy.integrate import solve_ivp
 
-    # Normalize to zero mean and unit std
+
+def _generate_chaotic_noise(
+    mean, std, size, dt=0.01, sigma=10.0, rho=28.0, beta=8.0 / 3.0, x0=[1.0, 1.0, 1.0]
+):
+    """
+    Generate chaotic noise using the Lorenz attractor.
+    Returns a 1D projection of the 3D trajectory (e.g., the x-component).
+    The result is scaled to the desired mean and std.
+    """
+
+    def lorenz(t, state):
+        x, y, z = state
+        dx = sigma * (y - x)
+        dy = x * (rho - z) - y
+        dz = x * y - beta * z
+        return [dx, dy, dz]
+
+    t_span = (0, dt * size)
+    t_eval = np.linspace(t_span[0], t_span[1], size)
+
+    sol = solve_ivp(lorenz, t_span, x0, t_eval=t_eval, method="RK45")
+    x = sol.y[0]  # Take the x-component (or use y[1], y[2] for variation)
+
+    # Normalize to desired mean and std
     x = (x - np.mean(x)) / np.std(x)
     x = x * std + mean
     return x

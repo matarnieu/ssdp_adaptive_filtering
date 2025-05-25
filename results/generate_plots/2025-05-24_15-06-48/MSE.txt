@@ -1,2 +1,0 @@
-gwf_swc_stationary_abrupt.png 0.028397
-gwf_ema_stationary_abrupt.png 0.027091
