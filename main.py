@@ -215,13 +215,13 @@ print(f"Running '{args.method}' method on '{args.data}' data...")
 filtered_signal = filter_function(noisy_signal, noise, K, extra_args)
 if filtered_signal is None:
     sys.exit(1)
-elif mode == "synthetic" and isinstance(filtered_signal, tuple):
+elif isinstance(filtered_signal, tuple):
     filtered_signal, filter_history = filtered_signal
-    filter_distances = distances = np.linalg.norm(
-        np.array(filter_history) - np.array(true_filter_history),
-        axis=1,
-    )
-    if args.print_filter_distances:
+    if mode == "synthetic" and args.print_filter_distances:
+        filter_distances = np.linalg.norm(
+            np.array(filter_history) - np.array(true_filter_history),
+            axis=1,
+        )
         print("Filter distances:", json.dumps(filter_distances.tolist()))
 
     """plot_signals(
