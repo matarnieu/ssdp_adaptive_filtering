@@ -1,68 +1,58 @@
-# methods/nlms.py
-"""
-Normalized LMS noise canceller with optional *Nit* inner iterations.
-Defaults are tuned for robust, low-misadjustment performance on
-float-scale audio (±1.0).
-"""
-from __future__ import annotations
 import numpy as np
 
 
-# --------------------------------------------------------------------- #
-def _nlms_core(
-    d: np.ndarray,
-    x: np.ndarray,
-    mu: float,
-    K: int,
-    eps: float,
-    Nit: int,
-) -> np.ndarray:
-    """Vectorised NLMS.
-
-    Returns
-    -------
-    e : ndarray
-        The cleaned/error signal  e[n] = d[n] − wᵀx.
+def filter_signal_nlms(noisy_signal, noise, K, args):
     """
-    N = len(d)
-    x_pad = np.concatenate([x, np.zeros(K)])
-    w = np.zeros(K, dtype=np.float32)
-    e = np.empty(N, dtype=np.float32)
+    Apply LMS adaptive filtering to denoise a signal.
 
-    for n in range(N):
-        x_vec = x_pad[n : n + K][::-1]
+    Parameters:
+    - noisy_signal: observed signal (numpy array)
+    - noise: reference noise signal (numpy array)
+    - K: filter length (int)
+    - args: dict with optional key 'mu' (float)
 
-        # --- inner gradient steps -------------------------------------
-        for _ in range(Nit):
-            err = d[n] - np.dot(w, x_vec)
-            w += (mu / (np.dot(x_vec, x_vec) + eps)) * err * x_vec
-
-        # final error after Nit updates
-        e[n] = d[n] - np.dot(w, x_vec)
-
-    return e
-
-
-# --------------------------------------------------------------------- #
-# Required entry-point
-# --------------------------------------------------------------------- #
-def filter_signal_nlms(
-    noisy_signal: np.ndarray,
-    noise: np.ndarray,
-    K: int,
-    args: dict,
-) -> np.ndarray:
+    Returns:
+    - filtered_signal: numpy array of shape (N,), or None on error
     """
-    Parameters
-    ----------
-    mu   : float, default 0.05
-        Step size (recommend 0 < μ ≤ 0.2 when Nit ≥ 5).
-    eps  : float, default 1e-3
-        Regulariser in the µ_normalisation term.
-    Nit  : int,   default 5
-        Inner iterations per sample.
-    """
-    mu  = float(args.get("mu", 0.05))
-    eps = float(args.get("eps", 1e-3))
-    Nit = int  (args.get("Nit", 5))
-    return _nlms_core(noisy_signal, noise, mu, K, eps, Nit)
+    try:
+        N = noisy_signal.shape[0]
+        # Check that noise and signal have the same length
+        if noise.shape[0] != N:
+            print("Error: noisy_signal and noise must have the same length.")
+            return None
+        # Signal must be at least as long as the filter length
+        if N < K:
+            print("Error: signal length must be at least equal to K.")
+            return None
+
+        mu = args.get("mu", 0.1)
+        eps = args.get('eps', 1e-8)
+        # Basic validation
+        if mu <= 0:
+            print("Error: 'mu' must be > 0")
+            return None
+
+        filter_ = np.zeros(K)
+        filter_history = [np.copy(filter_) for _ in range(N)]
+        output = np.zeros(N)
+
+        for n in range(K - 1, N):
+            # Get the current input window (reversed for convolution)
+            Xn = noise[n - K + 1 : n + 1][::-1]
+            # Desired signal (noisy observation)
+            dn = noisy_signal[n]
+            # Filter output
+            y = np.dot(Xn, filter_)
+            # Error between desired and output
+            e = dn - y
+            output[n] = e
+            mu_n = mu/(np.linalg.norm(Xn)**2 + eps)
+            # Update filter coefficients using NLMS rule
+            filter_ += mu_n * Xn * e
+            filter_history[n] = np.copy(filter_)
+
+        return output, filter_history
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
