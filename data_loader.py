@@ -43,7 +43,7 @@ Prints error message and returns None when it fails"""
 
 def generate_signal(num_samples, low, high, type_signal):
     t = np.linspace(low, high, num_samples)
-    frequency = 0.01
+    f = 0.001
     if type_signal == "sinus":
         return np.sin(2 * np.pi * f * t)
     elif type_signal == "binary":
