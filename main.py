@@ -13,6 +13,7 @@ from methods.sgd import filter_signal_sgd
 from methods.baseline import get_baseline_signal
 from methods.nlms import filter_signal_nlms
 from methods.rls import filter_signal_rls
+from methods.kalman import filter_signal_kalman
 
 from data_loader import load_real_data, generate_synthetic_data
 from analyzer import plot_signals, compute_mse, plot_mses, plot_psd, plot_snr_sweep
@@ -44,6 +45,7 @@ methods = {
     "sgd": filter_signal_sgd,
     "nlms": filter_signal_nlms,
     "rls": filter_signal_rls,
+    "kalman":  filter_signal_kalman,
     "all": None,
 }
 
@@ -138,9 +140,27 @@ parser.add_argument(
     help="Size of impulse response of filter used to generate synthetic data",
 )
 
+parser.add_argument("--Q",      type=float, default=1e-6,
+                    help="Kalman process-noise variance Q")
+
+parser.add_argument("--R",      type=float, default=None,
+                    help="Kalman measurement-noise variance R "
+                         "(default: var of first 1 000 samples)")
+
+parser.add_argument("--delta0", type=float, default=0.1,
+                    help="Kalman initial inverse-covariance factor δ₀")
+
 args, unknown = parser.parse_known_args()
 # Convert unknown args into a dictionary
 extra_args = {}
+
+if args.method == "kalman":
+    extra_args.update({
+        "Q":      args.Q,
+        "R":      args.R,
+        "delta0": args.delta0,
+    })
+
 for arg in unknown:
     if arg.startswith("--"):
         key_val = arg.lstrip("--").split("=", 1)
@@ -155,6 +175,9 @@ for arg in unknown:
             extra_args[key] = True  # handle flags without value
 
 # --- Validate required arguments for synthetic ---
+mode   = args.data         # "real" or "synthetic"
+method = args.method       # e.g. "nlms" or "rls"
+
 if args.data == "synthetic":
     if args.noise_power is None or args.filter_type is None or args.filter_size is None:
         parser.error(
@@ -162,57 +185,42 @@ if args.data == "synthetic":
         )
         sys.exit(1)
 
-if args.data == "real":
+if mode == "real":
     res = load_real_data(NOISY_SIGNAL_PATH, NOISE_SIGNAL_PATH)
-    # Check for error
     if res is None:
         sys.exit(1)
-    else:
-        noisy_signal, noise = res
-        K_true = BEST_REAL_K
-        # Either try different filter sizes or use the best one
-        if not args.K_sweep:
-            # Use best filter size
-            Ks_to_try = [BEST_REAL_K]
-        else:
-            Ks_to_try = [50, 100, 200, 500, 1000]
-        # Get true signal, if available
-        try:
-            true_signal = get_baseline_signal(noisy_signal, noise)
-        except NotImplementedError:
-            print("Warning: Baseline signal extraction not implemented.")
-            true_signal = None
-else:
+    noisy_signal, noise, sr  = res
+    K_true = BEST_REAL_K
+    Ks_to_try = [BEST_REAL_K] if not args.K_sweep else [50, 100, 200, 500, 1000]
+    try:
+        true_signal = get_baseline_signal(noisy_signal, noise)
+    except NotImplementedError:
+        print("Warning: Baseline signal extraction not implemented.")
+        true_signal = None
+else:  # synthetic
     res = generate_synthetic_data(
         NUM_SAMPLES,
         LOW,
         HIGH,
         SWITCHING_INTERVAL,
-        # Filter parameters
         args.filter_size,
         args.filter_type,
         args.filter_changing_speed,
-        # Noise parameters
         args.noise_power,
         args.noise_power_change,
         args.noise_distribution_change,
     )
     if res is None:
         sys.exit(1)
-    else:
-        noisy_signal, true_signal, noise, _ = res
-        K_true = args.filter_size
-        # Either try different filter sizes or use the true one
-        if not args.K_sweep:
-            Ks_to_try = [K_true]
-        else:
-            Ks_to_try = list(range(1, K_true + 5))
+    noisy_signal, true_signal, noise, _ = res
+    K_true = args.filter_size
+    Ks_to_try = [K_true] if not args.K_sweep else list(range(1, K_true + 5))
 
 
 # --- RUN SELECTED FILTERING METHOD ---
 
-if args.method not in methods.keys():
-    print(f"Invalid method. Choose one of {methods.keys()}.")
+if method not in methods:
+    print(f"Invalid method '{method}'. Choose one of {list(methods.keys())}.")
     sys.exit(1)
 else:
     # Select adaptive filtering method
@@ -225,12 +233,17 @@ if filter_function is not None:
     # TEST ONE METHOD
 
     # Try out for each filter size
-    for K in Ks_to_try:
+    for K in (Ks_to_try if method != "all" else [K_true]):
         print(f"Trying filter size {K}...")
         # TODO: Measure running time
         filtered_signal = filter_function(noisy_signal, noise, K, extra_args)
         if filtered_signal is None:
             sys.exit(1)
+
+        if mode == 'real':
+            out_path = f"C:/Users/Admin/Downloads/ssdp_adaptive_filtering-master (3)/ssdp_adaptive_filtering-master/data/clean_{method}_K{K}.wav"
+            sf.write(out_path, filtered_signal, 44100, subtype="PCM_24")
+            print(f"[info] cleaned signal written → {out_path}")
 
         # Visualize results
         signals_to_plot = [
