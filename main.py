@@ -9,7 +9,8 @@ from methods.generalized_wiener_filter import (
     filter_signal_gwf_swc,
     filter_signal_gwf_ema,
 )
-from methods.sgd import filter_signal_sgd
+from methods.lms import filter_signal_lms
+from methods.vslms import filter_signal_vslms   
 from methods.baseline import get_baseline_signal
 from methods.nlms import filter_signal_nlms
 from methods.rls import filter_signal_rls
@@ -42,7 +43,8 @@ methods = {
     "gwf_fc": filter_signal_gwf_fc,
     "gwf_swc": filter_signal_gwf_swc,
     "gwf_ema": filter_signal_gwf_ema,
-    "sgd": filter_signal_sgd,
+    "lms": filter_signal_lms,
+    "vslms": filter_signal_vslms,
     "nlms": filter_signal_nlms,
     "rls": filter_signal_rls,
     "kalman": filter_signal_kalman,
