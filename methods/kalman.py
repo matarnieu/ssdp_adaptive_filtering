@@ -25,7 +25,7 @@ def _kalman_core(
     P = np.eye(K, dtype=np.float32) / delta0     # <<< safer than 1e3·I
 
     I = np.eye(K, dtype=np.float32)
-    e = np.empty(N, dtype=np.float32)
+    e = np.zeros(N, dtype=np.float32)
 
     for n in range(K-1, N):
         x_vec = x[n - K + 1 : n + 1][::-1] # latest K refs
