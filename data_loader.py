@@ -1,17 +1,40 @@
+from __future__ import annotations
 import numpy as np
-import librosa
-from synthesis import *
+import soundfile as sf  # ← new: preserves native scale
+import librosa  # still used for synthetic helpers
+from synthesis import *  # noqa: F403, F401
 
 """Returns noisy signal and noise signal as a 2-tuple of numpy arrays
 Prints error message and returns None when it fails"""
 
 
-def load_real_data(noisy_signal_path, noise_path):
-    noisy_signal, srns = librosa.load(
-        noisy_signal_path
-    )  # srns = sampling rate noisy signal
-    noise_signal, srn = librosa.load(noise_path)  # srn = sampling rate noise
-    return noisy_signal, noise_signal  # , srns, srn
+def load_real_data(
+    noisy_signal_path: str,
+    noise_path: str,
+    *,
+    level_match: bool = False,
+) -> tuple[np.ndarray, np.ndarray]:
+
+    noisy_signal, sr_d = sf.read(noisy_signal_path, dtype="float32")
+    noise_signal, sr_x = sf.read(noise_path, dtype="float32")
+
+    if noisy_signal.ndim > 1:
+        noisy_signal = noisy_signal.mean(axis=1)
+
+    if noise_signal.ndim > 1:
+        noise_signal = noise_signal.mean(axis=1)
+
+    if sr_d != sr_x:
+        raise ValueError(f"Sampling-rate mismatch: D={sr_d} Hz,  X={sr_x} Hz")
+
+    if level_match:
+        rms_d = np.std(noisy_signal)
+        rms_x = np.std(noise_signal) + 1e-12
+        noise_signal = noise_signal * (rms_d / rms_x)
+
+    # Trim to equal length
+    n = min(len(noisy_signal), len(noise_signal))
+    return noisy_signal[:n], noise_signal[:n], sr_d
 
 
 """Generate synthetic signal. Returns true signal, noisy signal and noise signal as a 3-tuple of numpy arrays
@@ -22,30 +45,26 @@ def generate_signal(num_samples, low, high, type_signal):
     t = np.linspace(low, high, num_samples)
     frequency = 0.01
     if type_signal == "sinus":
-        signal = np.sin(2 * np.pi * frequency * t)
+        return np.sin(2 * np.pi * f * t)
     elif type_signal == "binary":
-        signal = np.zeros(shape=num_samples)
-        signal[::2] = 1
+        sig = np.zeros_like(t)
+        sig[::2] = 1.0
+        return sig
     else:
-        raise ValueError
-    return signal
+        raise ValueError("type_signal must be 'sinus' or 'binary'")
 
 
 def generate_synthetic_data(
     num_samples,
     low,
     high,
-    # Noise and filter parameters
     switching_interval,
-    # Filter parameters
     filter_size,
     filter_type,
     filter_changing_speed,
-    # Noise parameters
     noise_power,
     noise_power_change,
     noise_distribution_change,
-    # Signal type
     type_signal="sinus",
 ):
     # generate signal

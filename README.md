@@ -60,7 +60,9 @@ python main.py synthetic gwf_swc --noise_power 0.3  --filter_type exponential_de
 
 python main.py synthetic gwf_ema --noise_power 0.3  --filter_type exponential_decay --filter_size 10 --lambda=0.999 --noise_distribution_change
 
-python main.py synthetic rls --noise_power 0.3  --filter_type exponential_decay --filter_size 10 --filter_changing_speed 0.5 --lam=0.996 --delta=1.0
+python main.py synthetic kalman --noise_power 0.3 --filter_type exponential_decay --filter_size 10 --Q=1e-5 --R=1e-3
+
+python main.py real kalman --Q=1e-6 --R=0.025 --delta0=1 
 
 
 HOW TO USE OPTIMIZE_PARAMS.PY:
