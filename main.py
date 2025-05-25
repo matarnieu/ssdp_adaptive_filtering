@@ -86,6 +86,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--print_filter_distances",
+    dest="print_filter_distances",
+    action="store_true",
+    default=False,
+    help="Print complete history of filter distances.",
+)
+
+parser.add_argument(
     "--plot_filename",
     dest="plot_filename",
     default=None,
