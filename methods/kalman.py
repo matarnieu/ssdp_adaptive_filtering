@@ -27,8 +27,8 @@ def _kalman_core(
     I = np.eye(K, dtype=np.float32)
     e = np.empty(N, dtype=np.float32)
 
-    for n in range(N):
-        x_vec = x_pad[n : n + K][::-1]           # latest K refs
+    for n in range(K-1, N):
+        x_vec = x[n - K + 1 : n + 1][::-1] # latest K refs
 
         # -------- time update ------------------------------------------
         P += Q * I                               # random-walk model
@@ -62,7 +62,8 @@ def filter_signal_kalman(
     delta0 initial inverse-covariance factor (RLS analogue), default 0.1
     """
     Q      = float(args.get("Q",      1e-6))
-    R      = float(args.get("R",      np.var(noisy_signal[:1000])))
+    #R      = float(args.get("R",      np.var(noisy_signal[:1000])))
+    R      = float(args.get("R",      1e-1))
     delta0 = float(args.get("delta0", 0.1))
 
     return _kalman_core(noisy_signal, noise, Q, R, delta0, K)
