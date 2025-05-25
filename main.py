@@ -3,6 +3,9 @@ import random
 import argparse
 import numpy as np
 import json
+import soundfile as sf
+import os
+
 
 # Import adaptive filtering algorithms
 from methods.generalized_wiener_filter import (
@@ -227,11 +230,14 @@ elif isinstance(filtered_signal, tuple):
         show=not args.dont_show_plot,
     )"""
 
-# If method returns some extreme values, delete them
-filtered_signal = np.clip(filtered_signal, -2, 2)
+if not mode == "real":
+    # If method returns some extreme values, delete them
+    filtered_signal = np.clip(filtered_signal, -2, 2)
 
 if mode == "real":
-    out_path = f"C:/Users/Admin/Downloads/ssdp_adaptive_filtering-master (3)/ssdp_adaptive_filtering-master/data/clean_{method}_K{K}.wav"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Join it with the data filename
+    out_path = os.path.join(script_dir, "data/clean_gwf_ema_K500.wav")
     sf.write(out_path, filtered_signal, 44100, subtype="PCM_24")
     print(f"[info] cleaned signal written → {out_path}")
 
