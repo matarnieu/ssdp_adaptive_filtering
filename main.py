@@ -231,6 +231,8 @@ if filter_function is not None:
         filtered_signal = filter_function(noisy_signal, noise, K, extra_args)
         if filtered_signal is None:
             sys.exit(1)
+        # If method returns some extreme values, delete them
+        filtered_signal = np.clip(filtered_signal, -2, 2)
 
         # Visualize results
         signals_to_plot = [

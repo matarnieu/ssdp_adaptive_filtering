@@ -52,13 +52,15 @@ EXPLANATION OF PARAMETERS:
 
 EXAMPLES:
 
-python main.py synthetic gwf_ema --noise_power 0.2  --filter_type exponential_decay --filter_size 10 --filter_changing_speed 0  --lambda=0.999
+python main.py synthetic gwf_ema --noise_power 0.3  --filter_type exponential_decay --filter_size 10 --filter_changing_speed 1.0  --lambda=0.999
 
-python main.py synthetic gwf_fc --noise_power 0.4  --filter_type mixed --filter_size 10 --filter_changing_speed 1.0 --noise_distribution_change
+python main.py synthetic gwf_fc --noise_power 0.3  --filter_type exponential_decay --filter_size 10 --filter_changing_speed 0.5
 
-python main.py synthetic gwf_swc --noise_power 0.3  --filter_type exponential_decay --filter_size 10 --filter_changing_speed 0.0 --window_size=70
+python main.py synthetic gwf_swc --noise_power 0.3  --filter_type exponential_decay --filter_size 10 --filter_changing_speed 0.5 --window_size=70
 
 python main.py synthetic gwf_ema --noise_power 0.3  --filter_type exponential_decay --filter_size 10 --lambda=0.999 --noise_distribution_change
+
+python main.py synthetic rls --noise_power 0.3  --filter_type exponential_decay --filter_size 10 --filter_changing_speed 0.5 --lam=0.996 --delta=1.0
 
 
 HOW TO USE OPTIMIZE_PARAMS.PY:
