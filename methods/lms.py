@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def filter_signal_lms(noisy_signal, noise, K, args):
     """
     Apply LMS adaptive filtering to denoise a signal.
@@ -22,8 +23,9 @@ def filter_signal_lms(noisy_signal, noise, K, args):
             print("Error: signal length must be at least equal to K.")
             return None
 
-        mu = args.get('mu', 0.1)
+        mu = args.get("mu", 0.1)
         filter_ = np.zeros(K)
+        filter_history = [np.copy(filter_) for _ in range(N)]
         output = np.zeros(N)
 
         for n in range(K - 1, N):
@@ -33,8 +35,9 @@ def filter_signal_lms(noisy_signal, noise, K, args):
             e = dn - y
             output[n] = e
             filter_ += mu * Xn * e
+            filter_history[n] = np.copy(filter_)
 
-        return output
+        return output, filter_history
 
     except Exception as e:
         print(f"Error: {e}")

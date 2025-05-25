@@ -21,6 +21,7 @@ def _filter_gwf_hard_cut(noisy_signal, noise, K, use_sliding_window, args):
     #             noise = X
 
     N = len(noisy_signal)
+    filter_history = [np.zeros(K) for _ in range(N)]
     filtered_signal = np.zeros(N)
     filtered_signal[:K] = noisy_signal[:K]  # Initialize first K samples
     # We simulate an on-the-fly situation where we store the last K samples
@@ -62,6 +63,7 @@ def _filter_gwf_hard_cut(noisy_signal, noise, K, use_sliding_window, args):
         except np.linalg.LinAlgError:
             f = np.zeros(K)  # fallback in case R_x is singular
             print(f"Warning: R_x is singular for index {n-1}, using zero filter.")
+        filter_history[n] = f
         # Apply filter to noise
         x_filter = noise[n - K : n][::-1]
         filtered_noise = np.dot(x_filter, f)
@@ -71,7 +73,7 @@ def _filter_gwf_hard_cut(noisy_signal, noise, K, use_sliding_window, args):
             print(
                 f"Warning: Filtered signal value exceeds limit at index {n-1}: {filtered_signal[n-1]}"
             )
-    return filtered_signal
+    return filtered_signal, filter_history
 
 
 def filter_signal_gwf_ema(noisy_signal, noise, K, args):
@@ -82,6 +84,7 @@ def filter_signal_gwf_ema(noisy_signal, noise, K, args):
     R_x = np.zeros((K, K))
     r_dx = np.zeros(K)
     lambda_ = args["lambda"]
+    filter_history = [np.zeros(K) for _ in range(N)]
 
     for n in range(K, N):
         x = noise[n - K + 1 : n + 1][::-1]
@@ -95,6 +98,7 @@ def filter_signal_gwf_ema(noisy_signal, noise, K, args):
         except np.linalg.LinAlgError:
             f = np.zeros(K)
 
+        filter_history[n] = f
         filtered_noise = np.dot(f, x)
         filtered_signal[n] = noisy_signal[n] - filtered_noise
-    return filtered_signal
+    return filtered_signal, filter_history

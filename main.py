@@ -10,7 +10,7 @@ from methods.generalized_wiener_filter import (
     filter_signal_gwf_ema,
 )
 from methods.lms import filter_signal_lms
-from methods.vslms import filter_signal_vslms   
+from methods.vslms import filter_signal_vslms
 from methods.baseline import get_baseline_signal
 from methods.nlms import filter_signal_nlms
 from methods.rls import filter_signal_rls
@@ -48,14 +48,10 @@ methods = {
     "nlms": filter_signal_nlms,
     "rls": filter_signal_rls,
     "kalman": filter_signal_kalman,
-    "all": None,
 }
 
 # Baseline signal
 true_signal = None
-# Different synthetic filter sizes that should be tried out
-K_true = None
-Ks_to_try = None
 # Baseline Signal + Noise that went through filter (e.g. echo)
 noisy_signal = None
 # Noise before it went through filter
@@ -90,14 +86,6 @@ parser.add_argument(
     dest="plot_filename",
     default=None,
     help="Filename of stored plot",
-)
-
-parser.add_argument(
-    "--K_sweep",
-    dest="K_sweep",
-    action="store_true",
-    default=False,
-    help="Which K strategy should be used: 'best' (default) or 'sweep'",
 )
 
 # Optional arguments (only needed for synthetic data)
@@ -142,36 +130,9 @@ parser.add_argument(
     help="Size of impulse response of filter used to generate synthetic data",
 )
 
-parser.add_argument(
-    "--Q", type=float, default=1e-6, help="Kalman process-noise variance Q"
-)
-
-parser.add_argument(
-    "--R",
-    type=float,
-    default=None,
-    help="Kalman measurement-noise variance R " "(default: var of first 1 000 samples)",
-)
-
-parser.add_argument(
-    "--delta0",
-    type=float,
-    default=0.1,
-    help="Kalman initial inverse-covariance factor δ₀",
-)
-
 args, unknown = parser.parse_known_args()
 # Convert unknown args into a dictionary
 extra_args = {}
-
-if args.method == "kalman":
-    extra_args.update(
-        {
-            "Q": args.Q,
-            "R": args.R,
-            "delta0": args.delta0,
-        }
-    )
 
 for arg in unknown:
     if arg.startswith("--"):
@@ -202,8 +163,7 @@ if mode == "real":
     if res is None:
         sys.exit(1)
     noisy_signal, noise, sr = res
-    K_true = BEST_REAL_K
-    Ks_to_try = [BEST_REAL_K] if not args.K_sweep else [50, 100, 200, 500, 1000]
+    K = BEST_REAL_K
     try:
         true_signal = get_baseline_signal(noisy_signal, noise)
     except NotImplementedError:
@@ -224,10 +184,8 @@ else:  # synthetic
     )
     if res is None:
         sys.exit(1)
-    noisy_signal, true_signal, noise, _ = res
-    K_true = args.filter_size
-    Ks_to_try = [K_true] if not args.K_sweep else list(range(1, K_true + 5))
-
+    noisy_signal, true_signal, noise, true_filter_history = res
+    K = args.filter_size
 
 # --- RUN SELECTED FILTERING METHOD ---
 
@@ -241,68 +199,50 @@ else:
 print(f"Running '{args.method}' method on '{args.data}' data...")
 
 # Perform adaptive filtering
-if filter_function is not None:
-    # TEST ONE METHOD
-
-    # Try out for each filter size
-    for K in Ks_to_try if method != "all" else [K_true]:
-        print(f"Trying filter size {K}...")
-        # TODO: Measure running time
-        filtered_signal = filter_function(noisy_signal, noise, K, extra_args)
-        if filtered_signal is None:
-            sys.exit(1)
-        # If method returns some extreme values, delete them
-        filtered_signal = np.clip(filtered_signal, -2, 2)
-
-        if mode == "real":
-            out_path = f"C:/Users/Admin/Downloads/ssdp_adaptive_filtering-master (3)/ssdp_adaptive_filtering-master/data/clean_{method}_K{K}.wav"
-            sf.write(out_path, filtered_signal, 44100, subtype="PCM_24")
-            print(f"[info] cleaned signal written → {out_path}")
-
-        # Visualize results
-        signals_to_plot = [
-            ("Noisy signal", noisy_signal),
-            ("Filtered signal", filtered_signal),
-        ]
-
-        if true_signal is not None:
-            # Plot true signal, if available
-            signals_to_plot.append(("True signal", true_signal))
-            # Compute MSE
-            mse_before_filtering = compute_mse(true_signal, noisy_signal)
-            print(f"MSE before filtering: {mse_before_filtering}")
-            mse = compute_mse(true_signal, filtered_signal)
-            print(f"MSE: {mse}")
-            # TODO: Compute and measure more stuff...
-
-        plot_signals(
-            signals_to_plot,
-            filename=args.plot_filename,
-            show=not args.dont_show_plot,
-        )
-        # plot_psd(signals_to_plot)
-else:
-    # TEST AND COMPARE ALL METHODS
-    filtered_signals = []
-
-    for method_name, fs in methods.items():
-        if fs is None:
-            continue
-        # Filter with each method
-        filtered_signal = fs(noisy_signal, noise, K_true, extra_args)
-        if filtered_signal is None:
-            sys.exit(1)
-        filtered_signals.append((method_name, filtered_signal))
-
-    signals_to_plot = filtered_signals.copy()
-    signals_to_plot.insert(0, ("Noisy signal", noisy_signal))
-
-    if true_signal is not None:
-        # Plot true signal, if available
-        signals_to_plot.append(("True signal", true_signal))
-        # Plot MSE's for different methods
-        plot_mses(true_signal, filtered_signals)
-
-    plot_signals(
-        signals_to_plot,
+# Try out for each filter size
+filtered_signal = filter_function(noisy_signal, noise, K, extra_args)
+if filtered_signal is None:
+    sys.exit(1)
+elif isinstance(filtered_signal, tuple):
+    # If the method returns a tuple, it means it also returns filter history
+    filtered_signal, filter_history = filtered_signal
+    filter_distances = distances = np.linalg.norm(
+        np.array(filter_history) - np.array(true_filter_history),
+        axis=1,
     )
+    print(f"[info] Filter distances: {filter_distances}")
+    """plot_signals(
+        [("Filter Estimation Error", filter_distances)],
+        show=not args.dont_show_plot,
+    )"""
+
+# If method returns some extreme values, delete them
+filtered_signal = np.clip(filtered_signal, -2, 2)
+
+if mode == "real":
+    out_path = f"C:/Users/Admin/Downloads/ssdp_adaptive_filtering-master (3)/ssdp_adaptive_filtering-master/data/clean_{method}_K{K}.wav"
+    sf.write(out_path, filtered_signal, 44100, subtype="PCM_24")
+    print(f"[info] cleaned signal written → {out_path}")
+
+# Visualize results
+signals_to_plot = [
+    ("Noisy signal", noisy_signal),
+    ("Filtered signal", filtered_signal),
+]
+
+if true_signal is not None:
+    # Plot true signal, if available
+    signals_to_plot.append(("True signal", true_signal))
+    # Compute MSE
+    mse_before_filtering = compute_mse(true_signal, noisy_signal)
+    print(f"MSE before filtering: {mse_before_filtering}")
+    mse = compute_mse(true_signal, filtered_signal)
+    print(f"MSE: {mse}")
+    # TODO: Compute and measure more stuff...
+
+plot_signals(
+    signals_to_plot,
+    filename=args.plot_filename,
+    show=not args.dont_show_plot,
+)
+# plot_psd(signals_to_plot)
