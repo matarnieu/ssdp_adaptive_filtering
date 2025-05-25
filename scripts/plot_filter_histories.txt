@@ -1,0 +1,17 @@
+## DEFAULT SETTINGS ##
+--noise_power 0.3
+--filter_type mixed
+--filter_size 50
+--filter_changing_speed 0.0
+
+# GWF with SSC
+python main.py synthetic gwf_fc
+
+# GWF with EMA
+python main.py synthetic gwf_ema --lambda=0.9988
+
+# LMS
+python main.py synthetic lms --mu=0.01
+
+# VS-LMS
+python main.py synthetic vslms --mu=0.1 --lambda=0.005

@@ -2,6 +2,7 @@ import sys
 import random
 import argparse
 import numpy as np
+import json
 
 # Import adaptive filtering algorithms
 from methods.generalized_wiener_filter import (
@@ -86,6 +87,14 @@ parser.add_argument(
     dest="plot_filename",
     default=None,
     help="Filename of stored plot",
+)
+
+parser.add_argument(
+    "--print_filter_distances",
+    dest="print_filter_distances",
+    action="store_true",
+    default=False,
+    help="Print complete history of filter distances.",
 )
 
 # Optional arguments (only needed for synthetic data)
@@ -210,7 +219,9 @@ elif isinstance(filtered_signal, tuple):
         np.array(filter_history) - np.array(true_filter_history),
         axis=1,
     )
-    print(f"[info] Filter distances: {filter_distances}")
+    if args.print_filter_distances:
+        print("Filter distances:", json.dumps(filter_distances.tolist()))
+
     """plot_signals(
         [("Filter Estimation Error", filter_distances)],
         show=not args.dont_show_plot,
@@ -238,7 +249,6 @@ if true_signal is not None:
     print(f"MSE before filtering: {mse_before_filtering}")
     mse = compute_mse(true_signal, filtered_signal)
     print(f"MSE: {mse}")
-    # TODO: Compute and measure more stuff...
 
 plot_signals(
     signals_to_plot,
