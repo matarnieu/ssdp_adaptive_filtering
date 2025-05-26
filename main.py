@@ -236,7 +236,7 @@ if not mode == "real":
 if mode == "real":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     # Join it with the data filename
-    out_path = os.path.join(script_dir, "data/clean_gwf_ema_K500.wav")
+    out_path = os.path.join(script_dir, f"data/clean_{method}_K{K}.wav")
     sf.write(out_path, filtered_signal, 44100, subtype="PCM_24")
     print(f"[info] cleaned signal written → {out_path}")
 

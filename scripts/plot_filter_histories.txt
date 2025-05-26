@@ -1,11 +1,8 @@
 ## DEFAULT SETTINGS ##
 --noise_power 0.3
 --filter_type mixed
---filter_size 50
+--filter_size 10
 --filter_changing_speed 0.0
-
-# GWF with SSC
-python main.py synthetic gwf_fc
 
 # GWF with EMA
 python main.py synthetic gwf_ema --lambda=0.9988

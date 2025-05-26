@@ -1,7 +1,7 @@
 ## NAME ##
-vslms_smooth
+rls_smooth
 ## RUN COMMAND ##
-python main.py synthetic vslms --noise_power 0.3 --filter_type exponential_decay --filter_size 10 --filter_changing_speed 0.5
+python main.py synthetic rls --noise_power 0.3 --filter_type exponential_decay --filter_size 10 --filter_changing_speed 0.5
 ## PARAMETERS ##
---mu=[0.0001, 0.001, 0.005, 0.01, 0.05, 0.1, 1.0]
---lambda=[0.0, 0.005, 0.01, 0.05, 0.1]
+--lam=[0.98, 0.985, 0.99, 0.995, 0.999, 0.9995]
+--delta=[0.001, 0.01, 0.1, 1.0, 10.0]

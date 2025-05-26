@@ -1,7 +1,7 @@
 ## DEFAULT SETTINGS ##
 --noise_power 0.3
 --filter_type exponential_decay
---filter_size 50
+--filter_size 10
 --filter_changing_speed 0.0
 
 ## RUN COMMANDS ##
@@ -14,6 +14,21 @@ python main.py synthetic gwf_swc --window_size=70
 # gwf_ema_stationary_fixed.png
 python main.py synthetic gwf_ema --lambda=0.9988
 
+# lms_stationary_fixed.png
+python main.py synthetic lms --mu=0.01
+
+# vslms_stationary_fixed.png
+python main.py synthetic vslms  --mu=0.1 --lambda=0.005
+
+# nlms_stationary_fixed.png
+python main.py synthetic nlms --mu=0.03
+
+# rls_stationary_fixed.png
+python main.py synthetic rls --lam=0.999 --delta=1.0
+
+# kalman_stationary_fixed.png
+python main.py synthetic kalman --Q=1e-6 --R=0.3 --delta0=0.01
+
 # gwf_ssc_stationary_smooth.png
 python main.py synthetic gwf_fc --filter_changing_speed 0.5
 
@@ -23,11 +38,47 @@ python main.py synthetic gwf_swc --filter_changing_speed 0.5 --window_size=70
 # gwf_ema_stationary_smooth.png
 python main.py synthetic gwf_ema --filter_changing_speed 0.5 --lambda=0.9988
 
+# lms_stationary_smooth.png
+python main.py synthetic lms --filter_changing_speed 0.5 --mu=0.01
+
+# vslms_stationary_smooth.png
+python main.py synthetic vslms --filter_changing_speed 0.5 --mu=0.1 --lambda=0.005
+
+# nlms_stationary_smooth.png
+python main.py synthetic nlms --filter_changing_speed 0.5 --mu=0.03
+
+# rls_stationary_smooth.png
+python main.py synthetic rls --filter_changing_speed 0.5 --lam=0.999 --delta=1.0
+
+# kalman_stationary_smooth.png
+python main.py synthetic kalman --filter_changing_speed 0.5 --Q=1e-6 --R=0.3 --delta0=0.01
+
+# gwf_ssc_stationary_abrupt.png
+python main.py synthetic gwf_fc --filter_type mixed
+
 # gwf_swc_stationary_abrupt.png
-python main.py synthetic gwf_swc --filter_type mixed --window_size=20
+python main.py synthetic gwf_swc --filter_type mixed --window_size=70
 
 # gwf_ema_stationary_abrupt.png
-python main.py synthetic gwf_ema --filter_type mixed --lambda=0.995
+python main.py synthetic gwf_ema --filter_type mixed --lambda=0.9988
+
+# lms_stationary_abrupt.png
+python main.py synthetic lms --filter_type mixed --mu=0.01
+
+# vslms_stationary_abrupt.png
+python main.py synthetic vslms --filter_type mixed --mu=0.1 --lambda=0.005
+
+# nlms_stationary_abrupt.png
+python main.py synthetic nlms --filter_type mixed --mu=0.03
+
+# rls_stationary_abrupt.png
+python main.py synthetic rls --filter_type mixed --lam=0.999 --delta=1.0
+
+# kalman_stationary_abrupt.png
+python main.py synthetic kalman --filter_type mixed --Q=1e-6 --R=0.3 --delta0=0.01
+
+# gwf_ssc_powerchange_fixed.png
+python main.py synthetic gwf_fc --filter_type exponential_decay
 
 # gwf_swc_powerchange_fixed.png
 python main.py synthetic gwf_swc --window_size=70 --noise_power_change
@@ -35,15 +86,18 @@ python main.py synthetic gwf_swc --window_size=70 --noise_power_change
 # gwf_ema_powerchange_fixed.png
 python main.py synthetic gwf_ema --lambda=0.9988 --noise_power_change
 
-# lms_stationary_fixed.png
-python main.py synthetic lms --mu=0.01
-
-# lms_stationary_smooth.png
-python main.py synthetic lms --filter_changing_speed 0.5 --mu=0.01
-
-# lms_stationary_abrupt.png
-python main.py synthetic lms --filter_type mixed --mu=0.01
-
 # lms_powerchange_fixed.png
-python main.py synthetic lms --mu=0.01 --noise_power_change
+python main.py synthetic lms --noise_power_change --mu=0.01
+
+# vslms_powerchange_fixed.png
+python main.py synthetic vslms --noise_power_change --mu=0.1 --lambda=0.005
+
+# nlms_powerchange_fixed.png
+python main.py synthetic nlms --noise_power_change --mu=0.03
+
+# rls_powerchange_fixed.png
+python main.py synthetic rls --noise_power_change --lam=0.999 --delta=1.0
+
+# kalman_powerchange_fixed.png
+python main.py synthetic kalman --noise_power_change --Q=1e-6 --R=0.3 --delta0=0.01
 
