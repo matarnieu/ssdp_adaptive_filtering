@@ -19,6 +19,7 @@ from methods.baseline import get_baseline_signal
 from methods.nlms import filter_signal_nlms
 from methods.rls import filter_signal_rls
 from methods.kalman import filter_signal_kalman
+from methods.freq_kalman import filter_signal_fkf
 
 from data_loader import load_real_data, generate_synthetic_data
 from analyzer import plot_signals, compute_mse, plot_mses, plot_psd, plot_snr_sweep
@@ -52,6 +53,7 @@ methods = {
     "nlms": filter_signal_nlms,
     "rls": filter_signal_rls,
     "kalman": filter_signal_kalman,
+    "fkf": filter_signal_fkf
 }
 
 # Baseline signal
