@@ -14,7 +14,25 @@ def load_real_data(
     *,
     level_match: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
+    """Loads real noisy and noise audio files.
 
+    Converts stereo to mono if needed, optionally matches levels (RMS), 
+    and trims both signals to the same length.
+
+    Args:
+        noisy_signal_path (str): Path to the noisy audio file.
+        noise_path (str): Path to the noise audio file.
+        level_match (bool, optional): Whether to match the noise level to the noisy signal. Defaults to False.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, int]: Tuple containing:
+            - noisy_signal: 1D array of noisy signal samples.
+            - noise_signal: 1D array of noise signal samples.
+            - sr_d: Sampling rate (Hz).
+
+    Raises:
+        ValueError: If sampling rates of the two files differ.
+    """
     noisy_signal, sr_d = sf.read(noisy_signal_path, dtype="float32")
     noise_signal, sr_x = sf.read(noise_path, dtype="float32")
 
@@ -29,19 +47,28 @@ def load_real_data(
 
     if level_match:
         rms_d = np.std(noisy_signal)
-        rms_x = np.std(noise_signal) + 1e-12
+        rms_x = np.std(noise_signal) + 1e-12 # Avoid division by zero
         noise_signal = noise_signal * (rms_d / rms_x)
 
-    # Trim to equal length
+    # Trim both signals to the same length
     n = min(len(noisy_signal), len(noise_signal))
     return noisy_signal[:n], noise_signal[:n], sr_d
 
+def generate_signal(num_samples: int, low: float, high: float, type_signal: str) -> np.ndarray:
+    """Generates a synthetic clean signal.
 
-"""Generate synthetic signal. Returns true signal, noisy signal and noise signal as a 3-tuple of numpy arrays
-Prints error message and returns None when it fails"""
+    Args:
+        num_samples (int): Number of samples to generate.
+        low (float): Start time (in seconds or arbitrary units).
+        high (float): End time.
+        type_signal (str): Type of signal to generate, either 'sinus' or 'binary'.
 
+    Returns:
+        np.ndarray: The generated 1D signal array.
 
-def generate_signal(num_samples, low, high, type_signal):
+    Raises:
+        ValueError: If `type_signal` is not 'sinus' or 'binary'.
+    """
     t = np.linspace(low, high, num_samples)
     f = 0.01
     if type_signal == "sinus":
@@ -55,18 +82,46 @@ def generate_signal(num_samples, low, high, type_signal):
 
 
 def generate_synthetic_data(
-    num_samples,
-    low,
-    high,
-    switching_interval,
-    filter_size,
-    filter_type,
-    filter_changing_speed,
-    noise_power,
-    noise_power_change,
-    noise_distribution_change,
-    type_signal="sinus",
-):
+    num_samples: int,
+    low: float,
+    high: float,
+    switching_interval: int,
+    filter_size: int,
+    filter_type: str,
+    filter_changing_speed: float,
+    noise_power: float | None,
+    noise_power_change: float,
+    noise_distribution_change: float,
+    type_signal: str = "sinus",
+) -> tuple[np.ndarray | None, np.ndarray, np.ndarray | None, np.ndarray | None]:
+    """Generates a synthetic dataset composed of a clean signal, noise, and filtered noisy signal.
+
+    The function builds a base signal (sinusoidal or binary), optionally generates noise with
+    changing characteristics, applies a dynamic filter to the noise, and combines the result with the signal.
+
+    Args:
+        num_samples (int): Total number of time samples.
+        low (float): Lower bound for time axis (used to generate the base signal).
+        high (float): Upper bound for time axis.
+        switching_interval (int): Number of samples between changes in filter or noise parameters.
+        filter_size (int): Length of the finite impulse response filter.
+        filter_type (str): Filter type to generate (e.g. "lowpass", "random").
+        filter_changing_speed (float): Rate at which the filter coefficients change over time.
+        noise_power (float | None): Power of the generated noise. If None, no noise is added.
+        noise_power_change (float): Amplitude of noise power variation over time.
+        noise_distribution_change (float): Degree to which the noise distribution changes over time.
+        type_signal (str, optional): Type of clean signal to generate. Either "sinus" or "binary". Defaults to "sinus".
+
+    Returns:
+        tuple[np.ndarray | None, np.ndarray, np.ndarray | None, np.ndarray | None]:
+            - noisy_signal: Signal + filtered noise. `None` if no noise was added.
+            - clean_signal: The clean, generated signal.
+            - raw_noise: The generated raw noise signal. `None` if no noise was added.
+            - filter_matrix: 2D array where each row is a filter at a given time step. `None` if no noise.
+
+    Raises:
+        ValueError: If `type_signal` is invalid.
+    """
     # generate signal
     signal = generate_signal(
         num_samples=num_samples,
@@ -75,10 +130,11 @@ def generate_synthetic_data(
         type_signal=type_signal,
     )
 
-    # if noise_power is None, no noise added, hence no need to return the filter, noisy signal and the noise
+    # If no noise is to be added, return early with clean signal only
     if noise_power == None:
         return None, signal, None, None
 
+    # Generate dynamic noise with varying power and distribution
     noise = generate_noise(
         num_samples,
         noise_power,
@@ -86,9 +142,8 @@ def generate_synthetic_data(
         noise_distribution_change,
         switching_interval,
     )
-    # noise = generate_noise(power_noise=power_noise, size=signal.shape[0], timestep=None)
-    # filter changes at every timestep, hence H.shape() = (num_sample, filter_size)
-    # H = generate_mixed_filter(size_filter, num_samples)
+    
+    # Create a time-varying filter (one filter per time step)
     H = generate_filter(
         filter_type,
         filter_size,
@@ -96,12 +151,14 @@ def generate_synthetic_data(
         switching_interval,
         filter_changing_speed,
     )
-    # noise_filtered = np.convolve(noise, h, mode='same')
+    # Filter the noise signal manually using time-varying convolution
     noise_filtered = np.zeros(H.shape[0])
     padded_noise = np.pad(noise, (filter_size - 1, 0), mode="constant")
     for idx, h in enumerate(H):
-        # Doing the convolution manually as we dont need the whole convolution
-        segment = padded_noise[idx : idx + filter_size][::-1]  # keep the filter causal
+        # Take the most recent `filter_size` samples, reverse for causal filtering
+        segment = padded_noise[idx : idx + filter_size][::-1]
         noise_filtered[idx] = np.dot(h, segment)
+    
+    # Add filtered noise to clean signal
     noisy_signal = signal + noise_filtered
     return noisy_signal, signal, noise, H
