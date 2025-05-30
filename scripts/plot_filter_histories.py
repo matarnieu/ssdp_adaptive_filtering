@@ -26,6 +26,9 @@ for line in lines:
     if line.startswith("##"):
         continue
     elif line.startswith("--"):
+        # Filter out deprecated parameters
+        if "--power_noise_change" in line or "--power_distribution_change" in line:
+            continue
         default_args.append(line)
     elif line.startswith("#"):
         current_label = line.lstrip("#").strip()
@@ -39,10 +42,14 @@ histories = {}
 for label, raw_command in commands:
     full_command = raw_command + " " + " ".join(default_args)
 
+    # Ensure required flags are present
     if "--dont_show_plot" not in full_command:
         full_command += " --dont_show_plot"
     if "--print_filter_distances" not in full_command:
         full_command += " --print_filter_distances"
+    if "--noise_type" not in full_command:
+        # Default noise_type if none provided
+        full_command += " --noise_type=wgn"
 
     print(f"\n▶ Running: {label}\n{full_command}")
 
@@ -52,7 +59,7 @@ for label, raw_command in commands:
             capture_output=True,
             text=True,
             check=True,
-            cwd=PROJECT_ROOT,  # Important for relative paths in main.py
+            cwd=PROJECT_ROOT,
         )
     except subprocess.CalledProcessError as e:
         print(f"❌ Command failed for {label}:\n{e.stderr}")
@@ -63,7 +70,7 @@ for label, raw_command in commands:
     if match:
         try:
             distances = np.array(json.loads(match.group(1)))
-            histories[label] = distances  # ✅ store in the result dict
+            histories[label] = distances
             print(f"✅ Collected filter history for {label} (length {len(distances)})")
         except Exception as e:
             print(f"⚠️ Failed to parse distances for {label}: {e}")
@@ -75,9 +82,8 @@ if histories:
     for label, history in histories.items():
         plt.plot(history, label=label)
 
-    # plt.title("Filter Estimation Error (L2 Norm) over Time")
     plt.xlabel("Sample Index")
-    plt.ylabel("Error")
+    plt.ylabel("L2 Error")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()

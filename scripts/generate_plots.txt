@@ -1,5 +1,6 @@
 ## DEFAULT SETTINGS ##
 --noise_power 0.3
+--noise_type wgn
 --filter_type exponential_decay
 --filter_size 10
 --filter_changing_speed 0.0
@@ -78,26 +79,97 @@ python main.py synthetic rls --filter_type mixed --lam=0.999 --delta=1.0
 python main.py synthetic kalman --filter_type mixed --Q=1e-6 --R=0.3 --delta0=0.01
 
 # gwf_ssc_powerchange_fixed.png
-python main.py synthetic gwf_fc --filter_type exponential_decay
+python main.py synthetic gwf_fc --noise_type wgn_power_change
 
 # gwf_swc_powerchange_fixed.png
-python main.py synthetic gwf_swc --window_size=70 --noise_power_change
+python main.py synthetic gwf_swc --noise_type wgn_power_change --window_size=70
 
 # gwf_ema_powerchange_fixed.png
-python main.py synthetic gwf_ema --lambda=0.9988 --noise_power_change
+python main.py synthetic gwf_ema --noise_type wgn_power_change --lambda=0.9988
 
 # lms_powerchange_fixed.png
-python main.py synthetic lms --noise_power_change --mu=0.01
+python main.py synthetic lms --noise_type wgn_power_change --mu=0.01
 
 # vslms_powerchange_fixed.png
-python main.py synthetic vslms --noise_power_change --mu=0.1 --lambda=0.005
+python main.py synthetic vslms --noise_type wgn_power_change --mu=0.1 --lambda=0.005
 
 # nlms_powerchange_fixed.png
-python main.py synthetic nlms --noise_power_change --mu=0.03
+python main.py synthetic nlms --noise_type wgn_power_change --mu=0.03
 
 # rls_powerchange_fixed.png
-python main.py synthetic rls --noise_power_change --lam=0.999 --delta=1.0
+python main.py synthetic rls --noise_type wgn_power_change --lam=0.999 --delta=1.0
 
 # kalman_powerchange_fixed.png
-python main.py synthetic kalman --noise_power_change --Q=1e-6 --R=0.3 --delta0=0.01
+python main.py synthetic kalman --noise_type wgn_power_change --Q=1e-6 --R=0.3 --delta0=0.01
 
+# gwf_ssc_autoreg_fixed.png
+python main.py synthetic gwf_fc --noise_type ar
+
+# gwf_swc_autoreg_fixed.png
+python main.py synthetic gwf_swc --noise_type ar --window_size=70
+
+# gwf_ema_autoreg_fixed.png
+python main.py synthetic gwf_ema --noise_type ar --lambda=0.9988
+
+# lms_autoreg_fixed.png
+python main.py synthetic lms --noise_type ar --mu=0.01
+
+# vslms_autoreg_fixed.png
+python main.py synthetic vslms --noise_type ar --mu=0.1 --lambda=0.005
+
+# nlms_autoreg_fixed.png
+python main.py synthetic nlms --noise_type ar --mu=0.01
+
+# rls_autoreg_fixed.png
+python main.py synthetic rls --noise_type ar --lam=0.999 --delta=1.0
+
+# kalman_autoreg_fixed.png
+python main.py synthetic kalman --noise_type ar  --Q=1e-6 --R=0.3 --delta0=0.01
+
+# gwf_ssc_noisecorrchange_fixed.png
+python main.py synthetic gwf_fc --noise_type ar_correlation_change
+
+# gwf_swc_noisecorrchange_fixed.png
+python main.py synthetic gwf_swc --noise_type ar_correlation_change --window_size=70
+
+# gwf_ema_noisecorrchange_fixed.png
+python main.py synthetic gwf_ema --noise_type ar_correlation_change --lambda=0.9988
+
+# lms_noisecorrchange_fixed.png
+python main.py synthetic lms --noise_type ar_correlation_change --mu=0.01
+
+# vslms_noisecorrchange_fixed.png
+python main.py synthetic vslms --noise_type ar_correlation_change --mu=0.1 --lambda=0.005
+
+# nlms_noisecorrchange_fixed.png
+python main.py synthetic nlms --noise_type ar_correlation_change --mu=0.01
+
+# rls_noisecorrchange_fixed.png
+python main.py synthetic rls --noise_type ar_correlation_change --lam=0.999 --delta=1.0
+
+# kalman_noisecorrchange_fixed.png
+python main.py synthetic kalman --noise_type ar_correlation_change  --Q=1e-6 --R=0.3 --delta0=0.01
+
+# gwf_ssc_mixed_fixed.png
+python main.py synthetic gwf_fc --noise_type mixed
+
+# gwf_swc_mixed_fixed.png
+python main.py synthetic gwf_swc --noise_type mixed --window_size=70
+
+# gwf_ema_mixed_fixed.png
+python main.py synthetic gwf_ema --noise_type mixed --lambda=0.9988
+
+# lms_mixed_fixed.png
+python main.py synthetic lms --noise_type mixed --mu=0.01
+
+# vslms_mixed_fixed.png
+python main.py synthetic vslms --noise_type mixed --mu=0.1 --lambda=0.005
+
+# nlms_mixed_fixed.png
+python main.py synthetic nlms --noise_type mixed --mu=0.01
+
+# rls_mixed_fixed.png
+python main.py synthetic rls --noise_type mixed --lam=0.999 --delta=1.0
+
+# kalman_mixed_fixed.png
+python main.py synthetic kalman --noise_type mixed  --Q=1e-6 --R=0.3 --delta0=0.01

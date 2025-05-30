@@ -1,7 +1,6 @@
 ## NAME ##
-rls_smooth
+ema_distr_change
 ## RUN COMMAND ##
-python main.py synthetic rls --noise_power 0.3 --filter_type exponential_decay --filter_size 10 --filter_changing_speed 0.5
+python main.py synthetic gwf_ema --noise_power 0.3 --noise_type ar_correlation_change --filter_type exponential_decay --filter_size 10
 ## PARAMETERS ##
---lam=[0.98, 0.985, 0.99, 0.995, 0.999, 0.9995]
---delta=[0.001, 0.01, 0.1, 1.0, 10.0]
+--lambda=[0.995, 0.996, 0.997, 0.998, 0.999]

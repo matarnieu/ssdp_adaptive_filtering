@@ -39,6 +39,10 @@ for line in lines:
             key, val = line.split("=", 1)
             key = key.strip()
             val = val.strip()
+            # Skip deprecated parameters
+            if key in ("--power_noise_change", "--power_distribution_change"):
+                print(f"⚠️ Skipping deprecated parameter: {key}")
+                continue
             try:
                 values = ast.literal_eval(val)
                 if isinstance(values, list):
@@ -66,8 +70,8 @@ with open(CONFIG_FILE, "r") as src, open(CONFIG_COPY, "w") as dst:
     dst.write(src.read())
 
 # --- Build parameter combinations ---
-original_param_keys = list(param_grid.keys())  # e.g., ['--window_size']
-clean_param_keys = [k.lstrip("-") for k in original_param_keys]  # e.g., ['window_size']
+original_param_keys = list(param_grid.keys())
+clean_param_keys = [k.lstrip("-") for k in original_param_keys]
 combinations = list(product(*(param_grid[k] for k in original_param_keys)))
 
 # --- Run experiments ---
@@ -77,9 +81,11 @@ for combo in combinations:
     param_args = [f"{k}={v}" for k, v in zip(original_param_keys, combo)]
     full_command = base_command + " " + " ".join(param_args)
 
-    # Add --dont_show_plot
+    # Add required flags if not already present
     if "--dont_show_plot" not in full_command:
         full_command += " --dont_show_plot"
+    if "--noise_type" not in full_command:
+        full_command += " --noise_type=wgn"  # Default fallback
 
     print(f"\n▶ Running: {full_command}")
     try:

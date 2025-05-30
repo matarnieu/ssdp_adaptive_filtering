@@ -65,7 +65,6 @@ with open(COMMAND_FILE, "r") as f:
                 commands.append((command, filename))
                 pending_filename = None
 
-                # --- Extract method name and track order ---
                 if filename.startswith("gwf"):
                     method = "_".join(filename.split("_")[:2]).upper()
                 else:
@@ -80,6 +79,9 @@ def inject_defaults(command: str, defaults: dict, plot_filename: str = None) -> 
     existing_args = {tok.split("=")[0] for tok in tokens if tok.startswith("--")}
 
     for arg, val in defaults.items():
+        if arg in ("--power_noise_change", "--power_distribution_change"):
+            print(f"⚠️ Skipping deprecated flag: {arg}")
+            continue
         if arg not in existing_args:
             tokens.append(arg)
             if val is not True:
@@ -91,6 +93,10 @@ def inject_defaults(command: str, defaults: dict, plot_filename: str = None) -> 
 
     if "--dont_show_plot" not in existing_args:
         tokens.append("--dont_show_plot")
+
+    if "--noise_type" not in existing_args:
+        tokens.append("--noise_type")
+        tokens.append("wgn")  # Default noise type
 
     return " ".join(shlex.quote(tok) for tok in tokens)
 
@@ -117,52 +123,51 @@ for cmd, filename in commands:
     output = result.stdout
     print(output)
 
-    # Extract MSE
+    mse_before_match = re.search(r"MSE before filtering:\s*([0-9.]+)", output)
     mse_match = re.search(r"MSE:\s*([0-9.]+)", output)
+
+    mse_before = float(mse_before_match.group(1)) if mse_before_match else None
     mse_value = float(mse_match.group(1)) if mse_match else -1
 
     expected_plot = RESULTS_DIR / filename if filename else None
     if expected_plot and expected_plot.exists():
-        mse_results.append(f"{filename} {mse_value:.6f}")
+        mse_results.append((filename, mse_value, mse_before))
     else:
         print(f"⚠️ Plot not found: {expected_plot}")
 
 # --- Save MSE log ---
 with open(MSE_LOG, "w") as f:
-    f.write("\n".join(mse_results))
+    for filename, mse, mse_before in mse_results:
+        f.write(
+            f"{filename} {mse:.6f} {mse_before if mse_before is not None else -1:.6f}\n"
+        )
 
 print(f"\n✅ All commands completed. Results saved to:\n{RUN_DIR}")
 
-# ========== Create bar plots from MSE results ==========
+# ========== Create normalized MSE bar plots ==========
 sns.set_theme(style="darkgrid")
 
-# Parse MSE results
 entries = []
-for line in mse_results:
-    filename, mse = line.strip().split()
 
-    # Full method name
+for filename, mse, mse_before in mse_results:
+    if mse_before is None or mse_before <= 0:
+        continue  # Skip invalid data
+
     if filename.startswith("gwf"):
         method = "_".join(filename.split("_")[:2]).upper()
     else:
         method = filename.split("_")[0].upper()
 
     match = re.search(
-        r"(stationary_fixed|stationary_smooth|stationary_abrupt|powerchange_fixed)",
+        r"(stationary_fixed|stationary_smooth|stationary_abrupt|powerchange_fixed|autoreg_fixed|noisecorrchange_fixed|mixed_fixed)",
         filename,
     )
     if match:
         scenario = match.group(1)
-        entries.append((method, scenario, float(mse)))
+        mse_pct = (mse / mse_before) * 100
+        entries.append((method, scenario, mse_pct))
 
-df = pd.DataFrame(entries, columns=["Method", "Scenario", "MSE"])
-
-pretty_names = {
-    "stationary_fixed": "Stationary Fixed",
-    "stationary_smooth": "Stationary Smooth",
-    "stationary_abrupt": "Stationary Abrupt",
-    "powerchange_fixed": "Power Change Fixed",
-}
+df = pd.DataFrame(entries, columns=["Method", "Scenario", "MSE_Percentage"])
 
 # --- Plot each scenario ---
 for scenario in df["Scenario"].unique():
@@ -174,24 +179,27 @@ for scenario in df["Scenario"].unique():
 
     plt.figure(figsize=(10, 5))
     ax = sns.barplot(
-        data=subset, x="Method", y="MSE", palette="deep", ci=None, order=method_order
+        data=subset,
+        x="Method",
+        y="MSE_Percentage",
+        palette="deep",
+        ci=None,
+        order=method_order,
     )
 
     ax.set_xticklabels([label.replace("_", " ") for label in method_order], fontsize=12)
 
-    """plt.title(
-        f"MSE - {pretty_names.get(scenario, scenario)}", fontsize=16, weight="bold"
-    )"""
     plt.xlabel("Method", fontsize=14)
-    plt.ylabel("MSE", fontsize=14)
+    plt.ylabel("MSE (% of unfiltered)", fontsize=14)
     plt.xticks(rotation=0, fontsize=12)
     plt.yticks(fontsize=12)
     plt.grid(True, axis="y", linestyle="--", alpha=0.6)
 
     for p in ax.patches:
+        height = p.get_height()
         ax.annotate(
-            f"{p.get_height():.4f}",
-            (p.get_x() + p.get_width() / 2.0, p.get_height()),
+            f"{height:.1f}%",
+            (p.get_x() + p.get_width() / 2.0, height),
             ha="center",
             va="bottom",
             fontsize=11,
@@ -203,4 +211,4 @@ for scenario in df["Scenario"].unique():
     plt.savefig(BAR_PLOTS_DIR / f"{scenario}.png", dpi=300)
     plt.close()
 
-print(f"\n📊 MSE bar plots saved in: {BAR_PLOTS_DIR}")
+print(f"\n📊 Normalized MSE bar plots saved in: {BAR_PLOTS_DIR}")
