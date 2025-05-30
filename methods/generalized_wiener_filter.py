@@ -5,8 +5,6 @@ from scipy.linalg import toeplitz
 noisy_signal and noise (numpy arrays). Approximate K-tap filter. Return filtered_signal.
 In case of error, print error message and return None."""
 
-LIMIT = 3
-
 
 def filter_signal_gwf_fc(noisy_signal, noise, K, args):
     return _filter_gwf_hard_cut(noisy_signal, noise, K, False, args)
@@ -69,10 +67,6 @@ def _filter_gwf_hard_cut(noisy_signal, noise, K, use_sliding_window, args):
         filtered_noise = np.dot(x_filter, f)
         # Substract filtered noise from noisy signal
         filtered_signal[n - 1] = noisy_signal[n - 1] - filtered_noise
-        if abs(filtered_signal[n - 1]) > LIMIT:
-            print(
-                f"Warning: Filtered signal value exceeds limit at index {n-1}: {filtered_signal[n-1]}"
-            )
     return filtered_signal, filter_history
 
 
