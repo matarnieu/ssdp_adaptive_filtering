@@ -4,9 +4,6 @@ import soundfile as sf  # ← new: preserves native scale
 import librosa  # still used for synthetic helpers
 from synthesis import *
 
-"""Returns noisy signal and noise signal as a 2-tuple of numpy arrays
-Prints error message and returns None when it fails"""
-
 
 def load_real_data(
     noisy_signal_path: str,
@@ -14,7 +11,25 @@ def load_real_data(
     *,
     level_match: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
+    """Loads real-world audio data from two file paths.
 
+    Args:
+        noisy_signal_path (str): Path to the noisy signal file.
+        noise_path (str): Path to the noise-only signal file.
+        level_match (bool, optional): If True, matches RMS energy of noise to noisy signal.
+
+    Returns:
+        tuple: (noisy_signal, noise_signal, sample_rate)
+            noisy_signal (np.ndarray): The noisy recorded signal.
+            noise_signal (np.ndarray): The noise reference signal.
+            sample_rate (int): Sampling rate of both signals.
+
+    Raises:
+        ValueError: If the sampling rates of the two input files do not match.
+
+    Notes:
+        If loading fails, prints an error and returns None.
+    """
     noisy_signal, sr_d = sf.read(noisy_signal_path, dtype="float32")
     noise_signal, sr_x = sf.read(noise_path, dtype="float32")
 
@@ -38,6 +53,15 @@ def load_real_data(
 
 
 def _generate_complex_musical_signal(t, sample_rate=10000):
+    """Generates a complex synthetic musical-like signal with harmonics and transients.
+
+    Args:
+        t (np.ndarray): Time array.
+        sample_rate (int): Sampling rate in Hz.
+
+    Returns:
+        np.ndarray: Normalized synthetic musical signal.
+    """
     N = len(t)
 
     # 1. Varying base frequency over time (e.g., vibrato, modulation)
@@ -77,11 +101,21 @@ def _generate_complex_musical_signal(t, sample_rate=10000):
     return sig
 
 
-"""Generate synthetic signal. Returns true signal, noisy signal and noise signal as a 3-tuple of numpy arrays
-Prints error message and returns None when it fails"""
-
-
 def generate_signal(num_samples, low, high, type_signal):
+    """Generates a synthetic clean signal (sinusoidal or musical).
+
+    Args:
+        num_samples (int): Number of samples to generate.
+        low (float): Start of the time range.
+        high (float): End of the time range.
+        type_signal (str): Type of signal to generate ('sinus' or 'musical').
+
+    Returns:
+        np.ndarray: Generated clean signal.
+
+    Raises:
+        ValueError: If `type_signal` is not 'sinus' or 'musical'.
+    """
     t = np.linspace(low, high, num_samples)
     f = 0.01
     if type_signal == "sinus":
@@ -104,6 +138,27 @@ def generate_synthetic_data(
     noise_type,
     type_signal="sinus",
 ):
+    """Generates synthetic noisy data by filtering and adding noise to a clean signal.
+
+    Args:
+        num_samples (int): Number of samples in the generated data.
+        low (float): Start of time range.
+        high (float): End of time range.
+        switching_interval (int): Interval at which filters change.
+        filter_size (int): Length of the FIR filter.
+        filter_type (str): Type of filter to apply (e.g., 'random', 'lowpass').
+        filter_changing_speed (float): Speed of filter parameter change.
+        noise_power (float | None): Power of the added noise. If None, returns clean signal only.
+        noise_type (str): Type of noise (e.g., 'white', 'pink').
+        type_signal (str): Type of clean signal to generate ('sinus' or 'musical').
+
+    Returns:
+        tuple: (noisy_signal, clean_signal, noise_signal, filters)
+            noisy_signal (np.ndarray or None): Combined noisy signal.
+            clean_signal (np.ndarray): Original clean signal.
+            noise_signal (np.ndarray or None): Generated noise signal.
+            filters (np.ndarray or None): Time-varying filter bank.
+    """
     # generate signal
     signal = generate_signal(
         num_samples=num_samples,
