@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 import soundfile as sf  # ← new: preserves native scale
 import librosa  # still used for synthetic helpers
-from synthesis import *  # noqa: F403, F401
+from synthesis import *
 
 """Returns noisy signal and noise signal as a 2-tuple of numpy arrays
 Prints error message and returns None when it fails"""
@@ -37,6 +37,46 @@ def load_real_data(
     return noisy_signal[:n], noise_signal[:n], sr_d
 
 
+def _generate_complex_musical_signal(t, sample_rate=10000):
+    N = len(t)
+
+    # 1. Varying base frequency over time (e.g., vibrato, modulation)
+    freq_base = 220 + 30 * np.sin(2 * np.pi * t / 1000)  # modulate around 220 Hz
+    base_phase = 2 * np.pi * np.cumsum(freq_base) / sample_rate
+    base = np.sin(base_phase)
+
+    # 2. Modulate harmonic content over time
+    harmonic_strength = 0.3 + 0.2 * np.sin(2 * np.pi * t / 800)
+    harmonic = harmonic_strength * np.sin(2 * base_phase) + 0.25 * np.sin(
+        3 * base_phase + np.pi / 6
+    )
+
+    # 3. Envelope with jitter
+    envelope_base = 0.6 + 0.4 * np.sin(2 * np.pi * t / 400)
+    envelope_noise = 0.05 * np.random.randn(N)
+    envelope = np.clip(envelope_base + envelope_noise, 0, 1)
+
+    # 4. Grouped, stronger transients (clustered note attacks)
+    transients = np.zeros_like(t)
+    num_groups = 10
+    group_centers = np.linspace(0, N, num_groups + 2, dtype=int)[1:-1]
+    for center in group_centers:
+        cluster = np.random.randint(center - 20, center + 20, size=5)
+        cluster = np.clip(cluster, 0, N - 1)
+        transients[cluster] += np.random.uniform(0.7, 1.2, size=len(cluster))
+
+    # 5. Optional reverberation tail (optional long memory)
+    decay = np.exp(-np.linspace(0, 3, N))
+    reverb = np.convolve(base, decay, mode="same") * 0.05
+
+    # Combine all elements
+    sig = envelope * (base + harmonic) + transients + reverb
+
+    # Normalize to unit power
+    sig = sig / np.sqrt(np.mean(sig**2))
+    return sig
+
+
 """Generate synthetic signal. Returns true signal, noisy signal and noise signal as a 3-tuple of numpy arrays
 Prints error message and returns None when it fails"""
 
@@ -46,12 +86,10 @@ def generate_signal(num_samples, low, high, type_signal):
     f = 0.01
     if type_signal == "sinus":
         return np.sin(2 * np.pi * f * t)
-    elif type_signal == "binary":
-        sig = np.zeros_like(t)
-        sig[::2] = 1.0
-        return sig
+    elif type_signal == "musical":
+        return _generate_complex_musical_signal(t)
     else:
-        raise ValueError("type_signal must be 'sinus' or 'binary'")
+        raise ValueError("type_signal must be 'sinus' or 'musical'")
 
 
 def generate_synthetic_data(
@@ -63,8 +101,7 @@ def generate_synthetic_data(
     filter_type,
     filter_changing_speed,
     noise_power,
-    noise_power_change,
-    noise_distribution_change,
+    noise_type,
     type_signal="sinus",
 ):
     # generate signal
@@ -82,8 +119,7 @@ def generate_synthetic_data(
     noise = generate_noise(
         num_samples,
         noise_power,
-        noise_power_change,
-        noise_distribution_change,
+        noise_type,
         switching_interval,
     )
     # noise = generate_noise(power_noise=power_noise, size=signal.shape[0], timestep=None)
